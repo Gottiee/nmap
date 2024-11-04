@@ -13,3 +13,4 @@ void create_thread()
     for (int i = 0; i < 3; i ++)
         pthread_create(&tid[i], NULL, &routine, &i);
 }
+
