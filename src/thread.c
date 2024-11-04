@@ -12,5 +12,12 @@ void create_thread()
 
     for (int i = 0; i < 3; i ++)
         pthread_create(&tid[i], NULL, &routine, &i);
+    for (int i = 0; i < 3; i ++)
+        pthread_join(tid[i], NULL);
 }
 
+// init le mutex
+// lock 
+// unlock
+
+// faire une fonction de print lock/unlock

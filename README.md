@@ -38,7 +38,6 @@ struct host
 };
 ```
 
-
 ## Flux
 
 - Parsing

@@ -3,5 +3,6 @@
 
 #include <pthread.h>
 
+void create_thread();
 
 #endif
