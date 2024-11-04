@@ -16,7 +16,11 @@ SAN			= -fsanitize=address
 
 # SOURCES
 
-SRC_FILES = nmap
+SRC_FILES = nmap \
+error \
+handle_arg \
+thread \
+network
 
 
 C_FILES		=	$(addsuffix .c, $(SRC_FILES))
