@@ -15,5 +15,6 @@ typedef struct s_info
 #include "error.h"
 #include "file.h"
 #include "handle_arg.h"
+#include "icmp.h"
 
 #endif
