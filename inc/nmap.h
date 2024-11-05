@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdint.h> 
+#include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
@@ -25,13 +25,5 @@
 #define UDP 32
 
 #define MAX_SCAN 65535
-
-typedef struct 	info_t
-{
-	char	**hostnames;
-	uint8_t	nb_thread;
-	uint8_t	scans;
-	unsigned short	ports[2];
-}				s_info;
 
 #endif
