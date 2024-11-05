@@ -22,20 +22,25 @@ struct info
     int scan_type; //default 0 : else define type
 };
 
-struct port
+typedef struct s_scan_port
 {
     int port_nbr;
     char *service;
-    int state; // open / close /filtered
-}
+    // tableau pour les differents state (selon le type de scan)
+    int state[7];
+} t_scan_port;
 
-struct host
+typedef struct s_info_port
 {
     int nbr_of_port_scan;
-    struct host *next;
-    struct port port_tab[1024]
+    int to_scan[1024];
+} t_info_port;
 
-};
+typedef struct s_host
+{
+    struct host *next;
+    struct s_port port_tab[1024]
+} t_host;
 ```
 
 ## Flux
