@@ -14,3 +14,18 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
     freeaddrinfo(res);
     return true;
 }
+
+bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr) 
+{
+    memset(ping_addr, 0, sizeof(struct sockaddr_in));
+
+    // tcheck si c'est une address ipv4
+    if (inet_pton(AF_INET, target, &ping_addr->sin_addr) == 1) {
+        ping_addr->sin_family = AF_INET;
+        ping_addr->sin_port = htons(0);
+        return true;
+    }
+    if (!dns_lookup(target, ping_addr))
+        return false;
+    return true;
+}

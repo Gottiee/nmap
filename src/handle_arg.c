@@ -251,7 +251,7 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 				if (define_ports(&port_range, **argv) == 1)
 					return (error_handling(&hostnames));
 				info_ports->nbr_of_port_scan = port_range[1] - port_range[0] + 1;
-				bzero(info_ports->to_scan, 1025 * sizeof(unsigned short));
+				bzero(info_ports->to_scan, 1024 * sizeof(unsigned short));
 				for (unsigned short i = port_range[0]; i <= port_range[1]; i++)
 					info_ports->to_scan[i - port_range[0]] = i;
 				break ;

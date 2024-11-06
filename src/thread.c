@@ -26,7 +26,7 @@ void threading_scan_port(t_info *info, t_host *host)
         current_nbr_of_thread = 0;
         while (thread_index < info->nb_thread && port_index < nbr_of_port_scan)
         {
-            printf("creation d'un thread index: %d, port index effectué: %d\n", thread_index, port_index);
+            // printf("creation d'un thread index: %d, port index effectué: %d\n", thread_index, port_index);
             host->port_tab[port_index].port_nbr = info->port_info->to_scan[port_index];
             pthread_create(&thread_id[thread_index], NULL, &scan_routine, &host->port_tab[port_index]);
             thread_index++;

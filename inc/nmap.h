@@ -15,12 +15,14 @@ typedef struct s_info t_info;
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/time.h>
 
 #include "network.h"
 #include "handle_arg.h"
 #include "thread.h"
 #include "error.h"
 #include "file.h"
+#include "utils.h"
 
 
 //	SCAN VALUES
