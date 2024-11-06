@@ -20,8 +20,19 @@ int main(int argc, char **argv)
     fake_init_info(argv, argc, &port_info);
     info.port_info = &port_info;
 
-    // boucler sur les host
+    struct sockaddr_in ping_addr;
+
+    // boucler sur les host / IP
+    // pour chaque remplire ping_addr
+    // l'envoyer a ping_ip
+    // reponds True si le ping a fonctionné
+
+    dns_lookup("google.com", &ping_addr);
+    if (ping_ip(&ping_addr))
+        printf("Pinging goolgle worked\n");
+    else
+        printf("Pinging Google.com failed\n");
     if (info.thread > 0)
-        create_thread(&info, host);
+        threading_scan_port(&info, host);
     free(host);
 }

@@ -1,7 +1,21 @@
 #ifndef NMAP_H
 #define NMAP_H
 
+typedef struct s_info t_info;
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <string.h>
+#include <unistd.h>
+#include "icmp.h"
 #include "network.h"
+#include "thread.h"
+#include "error.h"
+#include "file.h"
+#include "handle_arg.h"
+
+
 typedef struct s_info
 {
     int thread;
@@ -9,12 +23,5 @@ typedef struct s_info
     t_info_port *port_info;
 } t_info;
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "thread.h"
-#include "error.h"
-#include "file.h"
-#include "handle_arg.h"
-#include "icmp.h"
 
 #endif

@@ -3,6 +3,6 @@
 
 #include <pthread.h>
 
-void create_thread(t_info *info, t_host *host);
+void threading_scan_port(t_info *info, t_host *host);
 
 #endif

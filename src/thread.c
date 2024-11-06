@@ -8,7 +8,7 @@ void *scan_routine(void *port_struct)
     return NULL;
 }
 
-void create_thread(t_info *info, t_host *host)
+void threading_scan_port(t_info *info, t_host *host)
 {
     pthread_t *thread_id;
     // pthread_mutex_t mutex;

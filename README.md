@@ -52,17 +52,22 @@ typedef struct s_host
         - return un tableau de host /ip / NULL
         - sauf si option help
 - dns resolution
-    - remplace les host par des ip
-    - si resoltuion a rater, on remplace la string par '\0'
-        - return tableau d'ip
-- Iterer sur les ip et verifier que la string != '\0'
-    - ping pour voir s'ils sont up
-- si on arrive a ping
-    - un thread par port (opti possbile)
-    - faire touts les types de scan si demandee (SYN, XMAS ..)
-    - scan (open / close / filtered)
-        -  si open (essaie de determiner le service)
+- while (host /ip)
+// multithreader la transformation en sockaddr_in et le ping de port
+- transform en sockadrr in
+    - fonctionne : en envoie les requete poru tester les ports
+        - ping pour voir s'ils sont up
+        - si on arrive a ping
+            - un thread par port (opti possbile)
+            - faire touts les types de scan si demandee (SYN, XMAS ..)
+            - scan (open / close / filtered)
+                -  si open (essaie de determiner le service)
+    - sinon: on boucle    
 - print
+
+
+- host / ip [45];
+    - tableau de sock addrin ? zzz
 
 
 ### Pseudo code
