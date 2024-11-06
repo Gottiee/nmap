@@ -27,7 +27,7 @@ char	**error_handling( char ***hostnames )
 	return (NULL);
 }
 
-bool	define_scan( char ***argv, s_info *info )
+bool	define_scan( char ***argv, t_info *info )
 {
 	printf("> Defining scan ... \n");
 	uint8_t	i = 0;
@@ -48,22 +48,22 @@ bool	define_scan( char ***argv, s_info *info )
 		switch (i)
 		{
 			case 0:
-				info->scans += SYN;
+				info->scan_type += SYN;
 				break ;
 			case 1:
-				info->scans += S_NULL;
+				info->scan_type += S_NULL;
 				break ;
 			case 2:
-				info->scans += ACK;
+				info->scan_type += ACK;
 				break ;
 			case 3:
-				info->scans += FIN;
+				info->scan_type += FIN;
 				break ;
 			case 4:
-				info->scans += XMAS;
+				info->scan_type += XMAS;
 				break ;
 			case 5:
-				info->scans += UDP;
+				info->scan_type += UDP;
 				break ;
 			default:
 			return (return_error("Format error: scan: Invalid value"));
@@ -177,7 +177,7 @@ bool	define_ports( unsigned short (*port_range)[2], char *argv )
 	return (0);
 }
 
-bool	init_nb_threads( char ***argv, s_info *info )
+bool	init_nb_threads( char ***argv, t_info *info )
 {
 	printf("> Initializing threads ... \n");
 	size_t	i = 0;
@@ -199,7 +199,7 @@ bool	init_nb_threads( char ***argv, s_info *info )
 	return(0);
 }
 
-char	**handle_arg( int argc, char ***argv, s_info *info, t_info_port *info_ports )
+char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports )
 {
 	char	**hostnames = NULL;
 	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", NULL};

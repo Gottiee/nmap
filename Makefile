@@ -20,7 +20,8 @@ SRC_FILES = nmap \
 error \
 handle_arg \
 thread \
-network
+network \
+icmp
 
 
 C_FILES		=	$(addsuffix .c, $(SRC_FILES))

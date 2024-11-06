@@ -22,22 +22,26 @@ struct info
     int scan_type; //default 0 : else define type
 };
 
-struct port
+typedef struct s_scan_port
 {
     int port_nbr;
     char *service;
-    int state; // open / close /filtered
-}
+    // tableau pour les differents state (selon le type de scan)
+    int state[7];
+} t_scan_port;
 
-struct host
+typedef struct s_info_port
 {
     int nbr_of_port_scan;
+    int to_scan[1024];
+} t_info_port;
+
+typedef struct s_host
+{
     struct host *next;
-    struct port port_tab[1024]
-
-};
+    struct s_port port_tab[1024]
+} t_host;
 ```
-
 
 ## Flux
 
@@ -48,17 +52,22 @@ struct host
         - return un tableau de host /ip / NULL
         - sauf si option help
 - dns resolution
-    - remplace les host par des ip
-    - si resoltuion a rater, on remplace la string par '\0'
-        - return tableau d'ip
-- Iterer sur les ip et verifier que la string != '\0'
-    - ping pour voir s'ils sont up
-- si on arrive a ping
-    - un thread par port (opti possbile)
-    - faire touts les types de scan si demandee (SYN, XMAS ..)
-    - scan (open / close / filtered)
-        -  si open (essaie de determiner le service)
+- while (host /ip)
+// multithreader la transformation en sockaddr_in et le ping de port
+- transform en sockadrr in
+    - fonctionne : en envoie les requete poru tester les ports
+        - ping pour voir s'ils sont up
+        - si on arrive a ping
+            - un thread par port (opti possbile)
+            - faire touts les types de scan si demandee (SYN, XMAS ..)
+            - scan (open / close / filtered)
+                -  si open (essaie de determiner le service)
+    - sinon: on boucle    
 - print
+
+
+- host / ip [45];
+    - tableau de sock addrin ? zzz
 
 
 ### Pseudo code
