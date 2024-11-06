@@ -16,14 +16,14 @@ typedef struct s_scan_port
 typedef struct s_info_port
 {
     int nbr_of_port_scan;
-    int to_scan[1025];
+    int to_scan[1024];
 } t_info_port;
 
 typedef struct s_host
 {
     struct host *next;
 	char	*name;
-    t_scan_port port_tab[1025];
+    t_scan_port port_tab[1024];
 } t_host;
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);

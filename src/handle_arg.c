@@ -29,7 +29,6 @@ char	**error_handling( char ***hostnames )
 
 bool	define_scan( char ***argv, t_info *info )
 {
-	printf("> Defining scan ... \n");
 	uint8_t	i = 0;
 	char *argv_list[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", NULL};
 
@@ -70,21 +69,15 @@ bool	define_scan( char ***argv, t_info *info )
 		}
 		++(*argv);
 	}
-	printf(">>> OK <<<\n");
 	return (0);
 }
 
 char	**init_hostnames( bool single, char ***argv )
 {
-	//	check len <= 255(including dots);
-	printf("> Initalizing hostnames ... \n");
-	// printf("*argv == [%s]\n", **argv);
-
 	char	**hostnames = NULL;
 
 	if (single)
 	{
-		// printf("Single address\n");
 		hostnames = calloc(2, sizeof(char *));
 		if (hostnames == NULL)
 		{
@@ -95,7 +88,6 @@ char	**init_hostnames( bool single, char ***argv )
 		++(*argv);
 		if (**argv != NULL)
 		{
-			// printf("*argv == [%s]\n", **argv);
 			if (***argv == '-')
 			{
 				fprintf(stderr, "ft_nmap: ip: no argument\n");
@@ -118,9 +110,7 @@ char	**init_hostnames( bool single, char ***argv )
 		}
 	}
 	else
-	{
 		printf("Multiple addresses\n");
-	}
 	return (hostnames);
 }
 
@@ -143,16 +133,14 @@ bool	get_port_number( unsigned short (*port_range)[2], char *argv, bool first )
 	}
 	if (argv[i] != sep)
 		return (return_error("Format error: port: Either port number is greater than 65535 or separator is different from '/'"));
-	else if (strlen(s) == 5 && strcmp(s, "65535") > 0)
-		return (return_error("Format error: scan: port number must be between 0 and 65535"));
+	else if (strcmp(s, "0") == 0 || (strlen(s) == 5 && strcmp(s, "65535") > 0))
+		return (return_error("Format error: scan: port number must be between 1 and 65535"));
 	(*port_range)[!first] = atoi(s);
 	return (0);
 }
 
 bool	define_ports( unsigned short (*port_range)[2], char *argv )
 {
-	printf("> Defining ports ... \n");
-	// printf("argv = [%s]\n", argv);
 	char	*sep = NULL;
 	size_t	len = 0;
 
@@ -170,16 +158,13 @@ bool	define_ports( unsigned short (*port_range)[2], char *argv )
 	argv = sep + 1;
 	if (get_port_number(port_range, argv, 0) == 1)
 		return (1);
-	// printf(" >>> End define_ports(): info->ports[0] == %d | info->ports[1] == %d\n", info->ports[0], info->ports[1]);
-	if ((*port_range)[1] - (*port_range)[0] > 1024 || (*port_range)[0] >= (*port_range)[1])
-		return (return_error("Format error: port: port range must be between 0 and 1024 written in ascending order"));
-	printf(">>> OK <<<\n");
+	if ((*port_range)[1] - (*port_range)[0] + 1 > 1024 || (*port_range)[0] >= (*port_range)[1])
+		return (return_error("Format error: port: port range must be between 1 and 1024 written in ascending order"));
 	return (0);
 }
 
 bool	init_nb_threads( char ***argv, t_info *info )
 {
-	printf("> Initializing threads ... \n");
 	size_t	i = 0;
 	
 	++(*argv);
@@ -195,7 +180,6 @@ bool	init_nb_threads( char ***argv, t_info *info )
 	info->nb_thread = atoi(**argv);
 	if (info->nb_thread > 250)
 		return (return_error("Format error: thread: value must a positive number less than 250"));
-	printf(">>> OK <<<\n");
 	return(0);
 }
 
@@ -212,7 +196,6 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 	(*argv)++;
 	for (int nb_arg = 0; **argv != NULL && nb_arg < argc; nb_arg++)
 	{
-		// printf("**argv == [%s]\n", **argv);
 		if ((**argv)[0] != '-' || (**argv)[1] != '-')
 		{
 			fprintf(stderr, "Invalid option: [%s]\n", **argv);
@@ -233,7 +216,6 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 			case 1:
 				if (define_scan(argv, info) == 1)
 					return (error_handling(&hostnames));
-				// printf("After define_scan(): **argv == [%s]\n", **argv);
 				break ;
 			case 2:
 				if (init_nb_threads(argv, info) == 1)
@@ -244,14 +226,13 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
 				printf(">>> OK <<<\n");
-				// printf("*argv == [%s]\n", **argv);
 				break ;
 			case 4:
 				++(*argv);
 				if (define_ports(&port_range, **argv) == 1)
 					return (error_handling(&hostnames));
 				info_ports->nbr_of_port_scan = port_range[1] - port_range[0] + 1;
-				bzero(info_ports->to_scan, 1025 * sizeof(unsigned short));
+				bzero(info_ports->to_scan, 1024 * sizeof(unsigned short));
 				for (unsigned short i = port_range[0]; i <= port_range[1]; i++)
 					info_ports->to_scan[i - port_range[0]] = i;
 				break ;
@@ -262,6 +243,5 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 		if (*argv != NULL && i != 1)
 			++(*argv);
 	}
-
 	return (hostnames);
 }

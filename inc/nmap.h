@@ -8,14 +8,13 @@ typedef struct s_info t_info;
 #include <strings.h>
 #include <string.h>
 #include <unistd.h>
-#include "icmp.h"
-#include "network.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
 
+#include "icmp.h"
 #include "network.h"
 #include "handle_arg.h"
 #include "thread.h"

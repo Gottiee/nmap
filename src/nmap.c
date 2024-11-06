@@ -10,8 +10,8 @@ int main( int argc, char **argv )
 {
     t_info info;
 	t_info_port	info_ports;
-    t_host *host = NULL;
-    struct sockaddr_in ping_addr;
+    // t_host *host = NULL;
+    // struct sockaddr_in ping_addr;
     // host = malloc(sizeof(t_host));
 	// if (host == NULL)
 	// {
@@ -19,9 +19,7 @@ int main( int argc, char **argv )
 	// 	exit (1);
 	// }
 
-
     info.port_info = &info_ports;
-
 
     // boucler sur les host / IP
     // pour chaque remplire ping_addr
@@ -37,14 +35,14 @@ int main( int argc, char **argv )
 	// for (unsigned short i = 0; i < info_ports.nbr_of_port_scan; i++)
 	// 	printf("info_ports.to_scan[%d] == %hu\n", i, info_ports.to_scan[i]);
 
-    dns_lookup("google.com", &ping_addr);
-    if (ping_ip(&ping_addr))
-        printf("Pinging goolgle worked\n");
-    else
-        printf("Pinging Google.com failed\n");
-    if (info.nb_thread > 0)
-        threading_scan_port(&info, host);
-    free(host);
+	// dns_lookup("google.com", &ping_addr);
+	// if (ping_ip(&ping_addr))
+	// 	printf("Pinging goolgle worked\n");
+	// else
+	// 	printf("Pinging Google.com failed\n");
+	// if (info.nb_thread > 0)
+	// 	threading_scan_port(&info, host);
+	// free(host);
 	
 	
 	for (uint8_t i = 0; info.hostnames[i] != NULL; i++)
