@@ -72,48 +72,6 @@ bool	define_scan( char ***argv, t_info *info )
 	return (0);
 }
 
-char	**init_hostnames( bool single, char ***argv )
-{
-	char	**hostnames = NULL;
-
-	if (single)
-	{
-		hostnames = calloc(2, sizeof(char *));
-		if (hostnames == NULL)
-		{
-			fprintf(stderr, "ft_nmap: init_hostnames: %s\n", strerror(errno));
-			return (NULL);
-		}
-		hostnames[1] = NULL;
-		++(*argv);
-		if (**argv != NULL)
-		{
-			if (***argv == '-')
-			{
-				fprintf(stderr, "ft_nmap: ip: no argument\n");
-				free(hostnames);
-				return (NULL);
-			}
-			hostnames[0] = strdup(**argv);
-			if (hostnames[0] == NULL)
-			{
-				fprintf(stderr, "ft_nmap: init_hostnames: %s\n", strerror(errno));
-				free(hostnames);
-				return (NULL);
-			}
-		}
-		else
-		{
-			fprintf(stderr, "Format error: ip: no hostname\n");
-			free(hostnames);
-			return (NULL);
-		}
-	}
-	else
-		printf("Multiple addresses\n");
-	return (hostnames);
-}
-
 bool	get_port_number( unsigned short (*port_range)[2], char *argv, bool first )
 {
 	uint8_t	i = 0;
@@ -183,10 +141,117 @@ bool	init_nb_threads( char ***argv, t_info *info )
 	return(0);
 }
 
+char	**init_single_hostname( char ***argv )
+{
+	char	**hostnames = NULL;
+
+	hostnames = calloc(2, sizeof(char *));
+	if (hostnames == NULL)
+	{
+		fprintf(stderr, "ft_nmap: init_hostnames: %s\n", strerror(errno));
+		return (NULL);
+	}
+	hostnames[1] = NULL;
+	if (**argv != NULL)
+	{
+		if (***argv == '-')
+		{
+			fprintf(stderr, "ft_nmap: ip: no argument\n");
+			free(hostnames);
+			return (NULL);
+		}
+		hostnames[0] = strdup(**argv);
+		if (hostnames[0] == NULL)
+		{
+			fprintf(stderr, "ft_nmap: init_hostnames: %s\n", strerror(errno));
+			free(hostnames);
+			return (NULL);
+		}
+	}
+	else
+	{
+		fprintf(stderr, "Format error: ip: no hostname\n");
+		free(hostnames);
+		return (NULL);
+	}
+	return (hostnames);
+}
+
+char	**init_multiple_hostnames( char ***argv )
+{
+	char	**hostnames = NULL;
+	char	*tmp = NULL;
+	size_t	len_buf = 256;
+	size_t n_hosts = 0;
+	FILE	*fd = fopen(**argv, "r");
+	if (fd == NULL)
+	{
+		fprintf(stderr, "ft_nmap: fopen: file not found\n");
+		return (NULL);
+	}
+	char	*buf = calloc(len_buf, sizeof(char));
+	if (buf == NULL)
+	{
+		perror("ft_nmap: calloc buf getline");
+		return (NULL);
+	}
+
+	while (getline(&buf, &len_buf, fd) != -1)
+	{
+		printf("buf == [%s]\n", buf);
+		++n_hosts;
+	}
+	hostnames = calloc(n_hosts + 1, sizeof(char *));
+	if (hostnames == NULL)
+	{
+		perror("ft_nmap: calloc hostnames");
+		return (NULL);
+	}
+	for (size_t i = 0; i < n_hosts; i++)
+	{
+		hostnames[i] = calloc(256, 1);
+		if (hostnames[i] == NULL)
+		{
+			perror("ft_nmap: calloc hostnames[]");
+			free(hostnames);
+			return (NULL);
+		}
+	}
+	hostnames[n_hosts] = NULL;
+	fseek(fd, 0L, 0);
+	for (size_t i = 0; (getline(&buf, &len_buf, fd) != -1) && i < n_hosts; i++)
+	{
+		strcpy(hostnames[i], buf);
+		tmp = strchr(hostnames[i], '\n');
+		if (tmp != NULL)
+			*tmp = '\0';
+		printf("hostnames[%ld] == [%s]\n", i, hostnames[i]);
+	}
+	
+	free(buf);
+	fclose(fd);
+	return (hostnames);
+}
+
+char	**init_hostnames( bool single, char ***argv )
+{
+	char	**hostnames = NULL;
+
+	++(*argv);
+	if (single)
+		hostnames = init_single_hostname(argv);
+	else
+	{
+		printf("Multiple addresses: [%s]\n", **argv);
+		hostnames = init_multiple_hostnames(argv);
+	}
+	return (hostnames);
+}
+
 char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports )
 {
 	char	**hostnames = NULL;
-	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", NULL};
+	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", NULL};
 	uint8_t	i = 0;
 	unsigned short	port_range[2] = {0};
 
@@ -225,7 +290,6 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 				hostnames = init_hostnames(true, argv);
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
-				printf(">>> OK <<<\n");
 				break ;
 			case 4:
 				++(*argv);
@@ -235,6 +299,11 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 				bzero(info_ports->to_scan, 1024 * sizeof(unsigned short));
 				for (unsigned short i = port_range[0]; i <= port_range[1]; i++)
 					info_ports->to_scan[i - port_range[0]] = i;
+				break ;
+			case 5:
+				hostnames = init_hostnames(false, argv);
+				if (hostnames == NULL)
+					return (error_handling(&hostnames));
 				break ;
 			default:
 				printf("ft_nmap: Unrecognize option '%s'\n", **argv);
