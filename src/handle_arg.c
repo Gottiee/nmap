@@ -3,6 +3,17 @@
 void	print_usage( void )
 {
 	printf("Printing usage ... \n");
+	printf("ft_nmap 1.0\n Usage: ./ft_nmap [--scan VALUE1 VALUE2 VALUE3] [--speedup number] [--ports n1/n2] --ip hostname|ip_addr.\n");
+	printf("--scan: VALUE can be one of these values: SYN, NULL, ACK, FIN, XMAS, UDP. One or multiple values can be specified.\n");
+	printf("--speedup: number must be a positive number less than 250 included.\n");
+	printf("--ports: n1 and n2 define a range of ports to scan. Both n1 and n2 must positive number. The range defined has to be less than 1024 long.\n");
+	printf("--ip: is required. hostname is a hostname and ip_addr a IPv4 ip address.\n");
+}
+
+bool	return_error( char *s_err )
+{
+	fprintf(stderr, "%s\n", s_err);
+	return (1);
 }
 
 char	**error_handling( char ***hostnames )
@@ -18,16 +29,13 @@ char	**error_handling( char ***hostnames )
 
 bool	define_scan( char ***argv, s_info *info )
 {
-	// printf("> Defining scan ... \n");
+	printf("> Defining scan ... \n");
 	uint8_t	i = 0;
 	char *argv_list[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", NULL};
 
 	++(*argv);
 	if (*argv == NULL || **argv == NULL || ***argv == '-' || ***argv == '\0')
-	{
-		fprintf(stderr, "Format error: scan: no value given\n");
-		return (1);
-	}
+		return (return_error("Format error: scan: no value"));
 	while ((*argv) != NULL && **argv != NULL && ***argv != '-')
 	{
 		// printf("**argv == [%s]\n", **argv);
@@ -58,18 +66,18 @@ bool	define_scan( char ***argv, s_info *info )
 				info->scans += UDP;
 				break ;
 			default:
-				fprintf(stderr, "Format error: Invalid scan option\n");
-				return (1) ;
+			return (return_error("Format error: scan: Invalid value"));
 		}
 		++(*argv);
 	}
+	printf(">>> OK <<<\n");
 	return (0);
 }
 
 char	**init_hostnames( bool single, char ***argv )
 {
 	//	check len <= 255(including dots);
-	// printf("> Initalizing hostnames ... \n");
+	printf("> Initalizing hostnames ... \n");
 	// printf("*argv == [%s]\n", **argv);
 
 	char	**hostnames = NULL;
@@ -90,7 +98,7 @@ char	**init_hostnames( bool single, char ***argv )
 			// printf("*argv == [%s]\n", **argv);
 			if (***argv == '-')
 			{
-				fprintf(stderr, "ft_nmap: ip: no argument given\n");
+				fprintf(stderr, "ft_nmap: ip: no argument\n");
 				free(hostnames);
 				return (NULL);
 			}
@@ -104,7 +112,7 @@ char	**init_hostnames( bool single, char ***argv )
 		}
 		else
 		{
-			fprintf(stderr, "Format error: ip: no hostname given\n");
+			fprintf(stderr, "Format error: ip: no hostname\n");
 			free(hostnames);
 			return (NULL);
 		}
@@ -116,7 +124,7 @@ char	**init_hostnames( bool single, char ***argv )
 	return (hostnames);
 }
 
-bool	get_port_number( s_info *info, char *argv, bool first )
+bool	get_port_number( unsigned short (*port_range)[2], char *argv, bool first )
 {
 	uint8_t	i = 0;
 	char	s[6] = {0};
@@ -124,60 +132,48 @@ bool	get_port_number( s_info *info, char *argv, bool first )
 	sep = (first == true ? '/' : '\0');
 
 	if (argv == NULL || *argv == '\0')
-	{
-		fprintf(stderr, "Format error: missing port number\n");
-		return (1);
-	}
+		return (return_error("Format error: port: missing port number"));
 
 	while (argv[i] && i < 6 && argv[i] != '/')
 	{
 		if (isdigit(argv[i]) == 0)
-		{
-			fprintf(stderr, "Format error: Port numbers must be only numerics\n");
-			return (1);
-		}
+			return (return_error("Format error: port: Port numbers must be only numerics"));
 		s[i] = argv[i];
 		i++;
 	}
 	if (argv[i] != sep)
-	{
-		fprintf(stderr, "Format error: Either port number is greater than 65535 or separator is different from '/'\n");
-		return (1);
-	}
-	info->ports[!first] = atoi(s);
+		return (return_error("Format error: port: Either port number is greater than 65535 or separator is different from '/'"));
+	else if (strlen(s) == 5 && strcmp(s, "65535") > 0)
+		return (return_error("Format error: scan: port number must be between 0 and 65535"));
+	(*port_range)[!first] = atoi(s);
 	return (0);
 }
 
-bool	define_ports( s_info *info, char *argv )
+bool	define_ports( unsigned short (*port_range)[2], char *argv )
 {
-	// printf("> Defining ports ... \n");
+	printf("> Defining ports ... \n");
 	// printf("argv = [%s]\n", argv);
 	char	*sep = NULL;
+	size_t	len = 0;
 
-
-	if (strlen(argv) > 11)
-	{
-		fprintf(stderr, "Format error: ports number must be between 0 and 65535\n");
-		return (1);
-	}
+	if (argv == NULL)
+		return (return_error("Format error: port: no value"));
+	len = strlen(argv);
+	if (len == 0 || len > 11)
+		return (return_error("Format error: port: value must be between 0 and 65535"));
 	sep = strchr(argv, '/');
 	if (sep == NULL || sep != strrchr(argv, '/'))
-	{
-		fprintf(stderr, "Format error: Format must be two numbers separated by a unique '/'\n");
-		return (1);
-	}
+		return (return_error("Format error: port: must be two numbers separated by a unique '/'"));
 
-	if (get_port_number(info, argv, 1))
+	if (get_port_number(port_range, argv, 1))
 		return (1);
 	argv = sep + 1;
-	if (get_port_number(info, argv, 0) == 1)
+	if (get_port_number(port_range, argv, 0) == 1)
 		return (1);
 	// printf(" >>> End define_ports(): info->ports[0] == %d | info->ports[1] == %d\n", info->ports[0], info->ports[1]);
-	if (info->ports[1] - info->ports[0] > 1024 || info->ports[0] >= info->ports[1])
-	{
-		fprintf(stderr, "Format error: port range must be between 0 and 1024 written in ascending order\n");
-		return (1);
-	}
+	if ((*port_range)[1] - (*port_range)[0] > 1024 || (*port_range)[0] >= (*port_range)[1])
+		return (return_error("Format error: port: port range must be between 0 and 1024 written in ascending order"));
+	printf(">>> OK <<<\n");
 	return (0);
 }
 
@@ -188,32 +184,27 @@ bool	init_nb_threads( char ***argv, s_info *info )
 	
 	++(*argv);
 	if (**argv == NULL)
-	{
-		fprintf(stderr, "Format error: speedup: no value given\n");
-		return (1);
-	}
+		return (return_error("Format error: speedup: no value"));
 	for (i = 0; (**argv)[i] != '\0'; i++)
 	{
 		if (isdigit((**argv)[i]) == 0)
-		{
-			fprintf(stderr, "Format error: speedup: value must be numeric\n");	
-			return (1);
-		}
+			return (return_error("Format error: speedup: value must be numeric"));
 	}
 	if (i == 0)
-	{
-		fprintf(stderr, "Format error: speedup: no value given\n");
-		return (1);
-	}
+		return (return_error("Format error: speedup: no value"));
 	info->nb_thread = atoi(**argv);
+	if (info->nb_thread > 250)
+		return (return_error("Format error: thread: value must a positive number less than 250"));
+	printf(">>> OK <<<\n");
 	return(0);
 }
 
-char	**handle_arg( int argc, char ***argv, s_info *info )
+char	**handle_arg( int argc, char ***argv, s_info *info, t_info_port *info_ports )
 {
 	char	**hostnames = NULL;
 	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", NULL};
 	uint8_t	i = 0;
+	unsigned short	port_range[2] = {0};
 
 	if (argc < 2)
 		fprintf(stderr, "Format error: Invalid number of arguments\n");
@@ -237,7 +228,8 @@ char	**handle_arg( int argc, char ***argv, s_info *info )
 		{
 			case 0:
 				print_usage();
-				break ;
+				(void)error_handling(&hostnames);
+				return (NULL) ;
 			case 1:
 				if (define_scan(argv, info) == 1)
 					return (error_handling(&hostnames));
@@ -246,27 +238,29 @@ char	**handle_arg( int argc, char ***argv, s_info *info )
 			case 2:
 				if (init_nb_threads(argv, info) == 1)
 					return (error_handling(&hostnames));
-				++(*argv);
 				break ;
 			case 3:
 				hostnames = init_hostnames(true, argv);
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
-				++(*argv);
+				printf(">>> OK <<<\n");
 				// printf("*argv == [%s]\n", **argv);
 				break ;
 			case 4:
 				++(*argv);
-				if (define_ports(info, **argv) == 1)
+				if (define_ports(&port_range, **argv) == 1)
 					return (error_handling(&hostnames));
-				++(*argv);
+				info_ports->nbr_of_port_scan = port_range[1] - port_range[0] + 1;
+				bzero(info_ports->to_scan, 1025 * sizeof(unsigned short));
+				for (unsigned short i = port_range[0]; i <= port_range[1]; i++)
+					info_ports->to_scan[i - port_range[0]] = i;
 				break ;
 			default:
-				// printf("[%s]: Unknown option\n", **argv);
+				printf("ft_nmap: Unrecognize option '%s'\n", **argv);
 				return (error_handling(&hostnames));
 		}
-		// if (*argv != NULL)
-		// 	++(*argv);
+		if (*argv != NULL && i != 1)
+			++(*argv);
 	}
 
 	return (hostnames);
