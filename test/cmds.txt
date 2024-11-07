@@ -1,0 +1,30 @@
+UDP ne demande pas de handshake.
+
+Request -> Response -> Response -> Response
+
+Donc il y a des pertes et des doublons
+
+nmap Interpretation:
+			Probe response										| Assigned State
+Any UDP response from target port (unusual)						|	open
+No response received (even after retransmissions)				|	open|filtered
+ICMP port unreachable error (type 3, code 3)					|	closed
+Other ICMP unreachable errors (type 3, code 1, 2, 9, 10, or 13)	|	filtered
+
+UDP datagram structure (Min 8 Bytes, Max 65535)
+(Header = 8 Bytes).
+|		0		|		1		|		2		|		3		|
+|---------------------------------------------------------------|
+|			Source Port			|			Destination Port	|
+|---------------------------------------------------------------|
+|				Length			|				Checksum		|
+|---------------------------------------------------------------|
+|																|
+|							Data								|
+|																|
+|---------------------------------------------------------------|
+
+
+
+
+
