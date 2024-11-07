@@ -28,3 +28,14 @@ t_host *init_host_list(char *name)
     start->name = name;
     return start;
 }
+
+void free_host_list(t_host *start)
+{
+    t_host *tmp = NULL;
+    while (start)
+    {
+        tmp = start;
+        start = start->next;
+        free(tmp);
+    }
+}

@@ -14,7 +14,6 @@ void ping_and_scan(t_info *info, struct timeval *start)
 	int pinged = 0;
 	int success = 0;
 
-
 	for (int i = 0; info->hostnames[i]; i++)
 	{
 		if (!fill_sockaddr_in(info->hostnames[i], &ping_addr))
@@ -40,7 +39,7 @@ void ping_and_scan(t_info *info, struct timeval *start)
 
 	double second = time_till_start(start);
 	printf("Nmap done: %d IP address (%d host up) scanned in %0.2f seconds\n", pinged, success, second);
-	// free la list chainee
+	free_host_list(start_host);
 }
 
 int main( int argc, char **argv )
