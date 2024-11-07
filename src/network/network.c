@@ -1,4 +1,4 @@
-#include "../inc/nmap.h"
+#include "../../inc/nmap.h"
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 {

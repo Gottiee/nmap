@@ -5,7 +5,7 @@ NAME		=	ft_nmap
 SRC_DIR		= 	src/
 OBJ_DIR		= 	obj/
 
-SUBDIR		=	obj/
+SUBDIR		=	obj/network
 
 CC			= gcc
 CFLAGS		= -lm -Wall -Werror -Wextra -g -MMD -MP
@@ -20,7 +20,13 @@ SRC_FILES = nmap \
 error \
 handle_arg \
 thread \
-network \
+network/network \
+network/UDP \
+network/SYN \
+network/XMAS \
+network/FIN \
+network/NULL \
+network/ACK \
 icmp \
 utils
 
