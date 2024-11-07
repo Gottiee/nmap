@@ -37,13 +37,11 @@ bool	define_scan( char ***argv, t_info *info )
 		return (return_error("Format error: scan: no value"));
 	while ((*argv) != NULL && **argv != NULL && ***argv != '-')
 	{
-		// printf("**argv == [%s]\n", **argv);
 		for (i = 0; **argv != NULL && argv_list[i] != NULL; i++)
 		{
 			if (strcmp(**argv, argv_list[i]) == 0)
 				break ;
 		}
-		// printf("i == %d\n", i);
 		switch (i)
 		{
 			case 0:
@@ -198,7 +196,6 @@ char	**init_multiple_hostnames( char ***argv )
 
 	while (getline(&buf, &len_buf, fd) != -1)
 	{
-		printf("buf == [%s]\n", buf);
 		++n_hosts;
 	}
 	hostnames = calloc(n_hosts + 1, sizeof(char *));
@@ -225,7 +222,6 @@ char	**init_multiple_hostnames( char ***argv )
 		tmp = strchr(hostnames[i], '\n');
 		if (tmp != NULL)
 			*tmp = '\0';
-		printf("hostnames[%ld] == [%s]\n", i, hostnames[i]);
 	}
 	
 	free(buf);
@@ -242,7 +238,6 @@ char	**init_hostnames( bool single, char ***argv )
 		hostnames = init_single_hostname(argv);
 	else
 	{
-		printf("Multiple addresses: [%s]\n", **argv);
 		hostnames = init_multiple_hostnames(argv);
 	}
 	return (hostnames);

@@ -13,6 +13,7 @@ typedef struct s_info t_info;
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/time.h>
 
 #include "icmp.h"
 #include "network.h"
@@ -20,6 +21,7 @@ typedef struct s_info t_info;
 #include "thread.h"
 #include "error.h"
 #include "file.h"
+#include "utils.h"
 
 
 //	SCAN VALUES

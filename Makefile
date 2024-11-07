@@ -21,7 +21,8 @@ error \
 handle_arg \
 thread \
 network \
-icmp
+icmp \
+utils
 
 
 C_FILES		=	$(addsuffix .c, $(SRC_FILES))
