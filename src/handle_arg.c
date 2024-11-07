@@ -45,22 +45,22 @@ bool	define_scan( char ***argv, t_info *info )
 		switch (i)
 		{
 			case 0:
-				info->scan_type += SYN;
+				info->scan_type = SYN;
 				break ;
 			case 1:
-				info->scan_type += S_NULL;
+				info->scan_type = S_NULL;
 				break ;
 			case 2:
-				info->scan_type += ACK;
+				info->scan_type = ACK;
 				break ;
 			case 3:
-				info->scan_type += FIN;
+				info->scan_type = FIN;
 				break ;
 			case 4:
-				info->scan_type += XMAS;
+				info->scan_type = XMAS;
 				break ;
 			case 5:
-				info->scan_type += UDP;
+				info->scan_type = UDP;
 				break ;
 			default:
 			return (return_error("Format error: scan: Invalid value"));

@@ -19,6 +19,8 @@ void threading_scan_port(t_info *info, t_host *host)
 
     // pthread_mutex_init(&mutex, NULL);
     thread_id = malloc(sizeof(pthread_t) * nbr_of_port_scan);
+    if (!thread_id)
+        fatal_perror("Malloc error \"thread_id\"");
 
     while (port_index < nbr_of_port_scan)
     {

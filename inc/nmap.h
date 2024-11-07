@@ -41,6 +41,7 @@ typedef struct s_info
 	int nb_thread;
 	int scan_type;
 	t_info_port *port_info;
+	t_host *start_host;
 } t_info;
 
 

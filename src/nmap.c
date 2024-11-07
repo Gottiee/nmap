@@ -4,6 +4,7 @@ void	init_values( t_info *info )
 {
 	info->hostnames = NULL;
 	info->nb_thread = 0;
+	info->scan_type = ALL;
 
 	info->port_info->nbr_of_port_scan = 1024;
 	for (uint16_t i = 0; i < 1024; i++)
@@ -35,12 +36,15 @@ void ping_and_scan(t_info *info, struct timeval *start)
 		if (!start_host)
 		{
 			start_host = init_host_list(info->hostnames[i]);
+			info->start_host = start_host;
 			current_host = start_host;
 		}
 		else
 			current_host = add_host_list(info->hostnames[i], start_host);
 		if (info->nb_thread > 0)
 			threading_scan_port(info, current_host);
+		else
+			scan(&ping_addr, info);
 	}
 
 	double second = time_till_start(start);

@@ -29,3 +29,41 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
         return false;
     return true;
 }
+
+void scan_all()
+{
+    printf("scan ALL\n");
+}
+
+void scan(struct sockaddr_in *ping_addr, t_info *info)
+{
+    (void)ping_addr;
+
+    switch (info->scan_type)
+    {
+        case (ALL):
+            scan_all();
+            break;
+        case(UDP):
+            scan_udp();
+            break;
+        case(SYN):
+            scan_syn();
+            break;
+        case(S_NULL):
+            scan_null();
+            break;
+        case(ACK):
+            scan_ack();
+            break;
+        case(XMAS):
+            scan_xmas();
+            break;
+        case(FIN):
+            scan_fin();
+            break;
+        default:
+            fatal_error("NANI\n");
+            break;
+    }
+}

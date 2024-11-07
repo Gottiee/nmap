@@ -11,6 +11,8 @@ double time_till_start(struct timeval *start)
 t_host *add_host_list(char *name, t_host *start)
 {
     t_host *new = malloc(sizeof(t_host));
+    if (!new)
+        fatal_perror("Malloc error \"t_host *new\"");
 
     while (start->next)
     {
@@ -24,6 +26,8 @@ t_host *add_host_list(char *name, t_host *start)
 t_host *init_host_list(char *name)
 {
     t_host *start = malloc(sizeof(t_host));
+    if (!start)
+        fatal_perror("Error malloc \"t_host start\"");
     start->next = NULL;
     start->name = name;
     return start;

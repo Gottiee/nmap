@@ -28,5 +28,12 @@ typedef struct s_host
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
+void scan(struct sockaddr_in *ping_addr, t_info *info);
 
+void scan_ack();
+void scan_fin();
+void scan_null();
+void scan_syn();
+void scan_xmas();
+void scan_udp();
 #endif
