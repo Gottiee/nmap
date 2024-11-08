@@ -7,7 +7,7 @@
 #include <netinet/if_ether.h>
 #include <net/ethernet.h>
 
-void packet_handler(u_char *args, struct pcap_pkthdr *header, u_char *packet)
+void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
     printf("NEW PACKET:\n");
     struct ether_header *eth_header;
@@ -56,7 +56,7 @@ void packet_handler(u_char *args, struct pcap_pkthdr *header, u_char *packet)
         const u_char *temp_pointer = payload;
         int byte_count = 0;
         while (byte_count++ < payload_length) {
-            printf("%c", *temp_pointer);
+            printf("%.2X.", *temp_pointer);
             temp_pointer++;
         }
         printf("\n");
@@ -69,6 +69,40 @@ void print_packet_info(const u_char *packet, struct pcap_pkthdr packet_header)
 {
     printf("Packet capture length: %d\n", packet_header.caplen);
     printf("Packet total length %d\n", packet_header.len);
+}
+
+void set_filters(pcap_t *handle)
+{
+//dst port x
+//dst portrange x-x (inclusif)
+//ip dst ? 
+//ip proto \tcp
+
+/*ex:
+ To select the start and end packets (the SYN and FIN packets) of each TCP conversation that involves a non-local host.
+
+    tcp[tcpflags] & (tcp-syn|tcp-fin) != 0 and not src and dst net localnet
+    
+To select the TCP packets with flags RST and ACK both set. (i.e. select only the RST and ACK flags in the flags field, and if the result is "RST and ACK both set", match)
+
+    tcp[tcpflags] & (tcp-rst|tcp-ack) == (tcp-rst|tcp-ack)
+*/
+
+    char error_buffer[PCAP_ERRBUF_SIZE];
+    struct bpf_program filter;
+    bpf_u_int32 subnet_mask, ip;
+    char filter_exp[] = "dst port 443 and ip dst 54.36.91.62 and tcp";
+
+    if (pcap_compile(handle, &filter, filter_exp, 0, ip) == -1)
+    {
+        printf("Bad fileter: %s\n", pcap_geterr(handle));
+        exit(3);
+    }
+    if (pcap_setfilter(handle, &filter) == -1)
+    {
+        printf("Error seting filters: %s\n", pcap_geterr(handle));
+        exit(3);
+    }
 }
 
 void capture_packet(char *device)
@@ -96,8 +130,9 @@ void capture_packet(char *device)
     //     exit(2);
     // }
     // print_packet_info(packet, packet_header);
-
+    set_filters(handle);
     pcap_loop(handle, 0, packet_handler, NULL);
+    pcap_close(handle);
 }
 
 void print_all_dev(pcap_if_t *alldvsp)
@@ -120,6 +155,7 @@ void print_all_dev(pcap_if_t *alldvsp)
     addr.s_addr = maskp;
     printf("Mask: %s\n", inet_ntoa(addr));
 }
+
 
 int main(void)
 {

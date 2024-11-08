@@ -5,12 +5,14 @@
 #define CLOSE 2
 #define FILTERED 3
 #include <stdbool.h>
+#include <pcap.h>
 
 typedef struct s_scan_port
 {
     int port_nbr;
     char *service;
     int state[7];
+    int *type_scan;
 } t_scan_port;
 
 typedef struct s_info_port
@@ -36,4 +38,7 @@ void scan_null();
 void scan_syn();
 void scan_xmas();
 void scan_udp();
+void setup_filter(char *filter_str, pcap_t *handle);
+pcap_t *init_handler(char *device);
+pcap_if_t *init_device();
 #endif
