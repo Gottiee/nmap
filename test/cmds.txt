@@ -28,3 +28,19 @@ UDP datagram structure (Min 8 Bytes, Max 65535)
 
 
 
+Nmap - Scan TCP SYN
+
+	Port Ouvert:	|	Port Ferme:
+	--> SYN			|	--> SYN
+	SYN/ACK <--		|	RST/ACK <--
+
+Initial Sequence Number:
+	Gives the position of the first data byte.
+	Value can be 0 to 4,294,967,295
+	Le numero de sequence est toujours valide.
+	Le numero d'accuse reception n'est valide que quand l'indicateur ACK est a 1.
+	Le seul moment ou l'indicateur ACK est non-definit => pas de numero accuse reception valide dans l'en-tete TCP du premier paquet d'etablissement de connextion.
+	L'ISN doit etre different pour chaque nouvelle connexion: evite la prediction de sequence TCP (attaque), eviter l'overlapping de donnees.
+
+
+	
