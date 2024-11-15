@@ -9,23 +9,23 @@
 
 typedef struct s_scan_port
 {
-    int port_nbr;
-    char *service;
-    int state[7];
-    int *type_scan;
+	int port_nbr;
+	char *service;
+	int state[7];
+	int *type_scan;
 } t_scan_port;
 
 typedef struct s_info_port
 {
-    int nbr_of_port_scan;
-    int to_scan[1024];
+	int nbr_of_port_scan;
+	int to_scan[1024];
 } t_info_port;
 
 typedef struct s_host
 {
-    struct s_host *next;
 	char	*name;
-    t_scan_port port_tab[1024];
+	t_scan_port port_tab[1024];
+	struct s_host *next;
 } t_host;
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);

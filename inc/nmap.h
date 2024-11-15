@@ -15,6 +15,8 @@ typedef struct s_info t_info;
 #include <ctype.h>
 #include <sys/time.h>
 
+typedef struct s_info t_info;
+
 #include "icmp.h"
 #include "network.h"
 #include "handle_arg.h"
