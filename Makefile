@@ -47,7 +47,7 @@ all:		 obj $(NAME)
 			
 
 $(NAME):	$(OBJS)
-			@$(CC) $(CFLAGS) $^ -o $@
+			@$(CC) $(CFLAGS) $^ -o $@ -lpcap
 			@echo "$(FONT_BOLD)FILES LOAD ! $(FONT_RESET)    $(COUNT)/($(COUNT))"
 			@echo "$(RED)$(NAME) compiled !$(DEF_COLOR)"
 
