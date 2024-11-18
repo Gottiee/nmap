@@ -1,11 +1,22 @@
 #include "../inc/nmap.h"
 
-pthread_mutex_t	g_lock;
 pthread_mutex_t	g_print_lock;
+pthread_mutex_t	g_lock;
 bool	g_done = 0;
-uint16_t	g_port = 0;
-bool	data_ready = 0;
-pthread_cond_t	g_cond;
+
+void	init_ths_struct( t_thread *ths_struct, const uint8_t size )
+{
+	for (uint8_t i = 0; i < size; i++)
+	{
+		ths_struct->is_free = 1;
+		ths_struct->id = i;
+		if (pthread_mutex_init(&ths_struct->lock, NULL) != 0)
+			printf("thread init failed\n");
+		if (pthread_cond_init(&ths_struct->cond, NULL) != 0)
+			printf("cond init failed\n");
+		ths_struct++;
+	}
+}
 
 void *scan_routine(void *port_struct)
 {
@@ -19,81 +30,88 @@ void *scan_routine(void *port_struct)
 	// pcap_freealldevs(alldvsp);
 	// pcap_close(handle);
 
-	int	port_nb = 0;
+	// int	port_nb = 0;
+	t_thread	*th_struct = (t_thread *)port_struct;
 
-	pthread_mutex_lock(&g_lock);
-	while (data_ready == 0)
+	pthread_mutex_lock(&th_struct->lock);
+	while (1)
 	{
+		pthread_mutex_lock(&g_lock);
+		if (g_done == 1)
+			break ;
+		pthread_mutex_unlock(&g_lock);
+		while (th_struct->data_ready == 0)
+			pthread_cond_wait(&th_struct->cond, &th_struct->lock);
+		th_struct->data_ready = 0;
 		pthread_mutex_lock(&g_print_lock);
-		printf("Thread waiting for data\n");
+		printf("(%d) port number == %d\n", th_struct->id, th_struct->port_nb);
 		pthread_mutex_unlock(&g_print_lock);
-		pthread_cond_wait(&g_cond, &g_lock);
 	}
-	if (g_port != 0)
-	{
-		port_nb = g_port;
-		data_ready = 0;
-		g_port = 0;
-	}
-	pthread_mutex_unlock(&g_lock);
-	pthread_mutex_lock(&g_print_lock);
-	printf("Thread recevied data + g_lock unlocked\n");
-	printf("Port number == %d\n", port_nb);
-	pthread_mutex_unlock(&g_print_lock);
-
+	pthread_mutex_unlock(&th_struct->lock);
 	return NULL;
 }
 
 void threading_scan_port(t_info *info, t_host *host)
 {
-	pthread_t *thread_id = NULL;
-
-	// pthread_mutex_t mutex;
-	int port_index = 0;
-	// int thread_index = 0;
-	// int nbr_of_port_scan = info->port_info->nbr_of_port_scan;
-	// int current_nbr_of_thread = 0;
+	(void) host;
+	pthread_t *threads = NULL;
+	t_thread	*ths_struct = malloc(sizeof(t_thread) * info->nb_thread);
+	if (ths_struct == NULL)
+		fatal_perror("Malloc error \"thread_id\"");
+	init_ths_struct(ths_struct, info->nb_thread);
 
 	pthread_mutex_init(&g_print_lock, NULL);
-
+	pthread_mutex_init(&g_lock, NULL);
 
 	// pthread_mutex_init(&mutex, NULL);
-	thread_id = malloc(sizeof(pthread_t) * info->nb_thread);
-	if (!thread_id)
+	threads = malloc(sizeof(pthread_t) * info->nb_thread);
+	if (!threads)
 		fatal_perror("Malloc error \"thread_id\"");
-	pthread_mutex_lock(&g_print_lock);
 	printf("%d bytes allocated\n", info->nb_thread);
-	pthread_mutex_unlock(&g_print_lock);
 	for (uint8_t i = 0; i < info->nb_thread; i++)
 	{
-		pthread_create(&thread_id[i], NULL, 
-						&scan_routine, &host->port_tab[port_index]);
+		pthread_create(&threads[i], NULL, 
+						&scan_routine, &(ths_struct[i]));
+		printf("thread_create(%d)\n", i);
 	}
+
+	sleep(2);
 
 	int	port = 0;
-	while (g_done == 0)
+	//	BOUCLE PRINCIPALE
+	while (port < 50)
 	{
-		if (port == 100)
-			g_done = 1;
-		if (port == 101)
+		//	BOUCLE TOUS LES THREADS
+		for (uint8_t th_id = 0; th_id < info->nb_thread; th_id++)
 		{
-			pthread_mutex_lock(&g_print_lock);
-			printf(">>> Quitting -> port == 101\n");
-			pthread_mutex_unlock(&g_print_lock);
-			return ;
+			//	CHECK IF MUTEX UNLOCK WITHOUT BLOCKING
+			if (pthread_mutex_trylock(&(ths_struct[th_id].lock)) == 0)
+			{
+				pthread_mutex_lock(&g_print_lock);
+				printf("Main > (%d) mutex locked: port == %d\n", th_id, port);
+				pthread_mutex_unlock(&g_print_lock);
+				ths_struct[th_id].port_nb = port;
+				ths_struct[th_id].data_ready = 1;
+				pthread_cond_signal(&(ths_struct[th_id].cond));
+				pthread_mutex_unlock(&(ths_struct[th_id].lock));
+				++port;
+				usleep(20);
+			}
 		}
-		pthread_mutex_lock(&g_lock);
-		g_port = port;
-		data_ready = 1;
-		pthread_mutex_unlock(&g_lock);
-		++port;
 	}
+	
+	pthread_mutex_lock(&g_lock);
+	g_done = 1;
+	pthread_mutex_unlock(&g_lock);
 
+	pthread_mutex_lock(&g_print_lock);
+	printf("Infinite loop finished\n");
+	pthread_mutex_unlock(&g_print_lock);
 
 	int	ret = 0;
 	for (int i = 0; i < info->nb_thread; i++)
 	{
-		ret = pthread_join(thread_id[i], NULL);
+		ret = pthread_join(threads[i], NULL);
 		if (ret != 0)
 		{
 			fprintf(stderr, "pthread_join failed: %d\n", ret);
@@ -115,27 +133,9 @@ void threading_scan_port(t_info *info, t_host *host)
 			exit(1);
 		}
 	}
-
-	// while (port_index < nbr_of_port_scan)
-	// {
-	// 	thread_index = 0;
-	// 	current_nbr_of_thread = 0;
-	// 	while (thread_index < info->nb_thread && port_index < nbr_of_port_scan)
-	// 	{
-	// 		// printf("creation d'un thread index: %d, port index effectué: %d\n", thread_index, port_index);
-	// 		host->port_tab[port_index].port_nbr = info->port_info->to_scan[port_index];
-	// 		host->port_tab[port_index].type_scan = &info->scan_type;
-	// 		pthread_create(&thread_id[thread_index], NULL, 
-	// 						&scan_routine, &host->port_tab[port_index]);
-	// 		thread_index++;
-	// 		port_index++;
-	// 		current_nbr_of_thread++;
-	// 	}
-	// 	for (int i = 0; i < current_nbr_of_thread; i++)
-	// 		pthread_join(thread_id[i], NULL);
-	// }
-	// pthread_mutex_destroy(&mutex);
 	pthread_mutex_destroy(&g_print_lock);
-	free(thread_id);
-	free(ports);
+	pthread_mutex_destroy(&g_lock);
+	free(threads);
+	printf("Leaving\n");
+	// free(ports);
 }

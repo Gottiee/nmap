@@ -28,6 +28,16 @@ typedef struct s_host
 	struct s_host *next;
 } t_host;
 
+typedef struct	s_thread
+{
+	bool	is_free;
+	bool	data_ready;
+	uint8_t	id;
+	uint16_t	port_nb;
+	pthread_cond_t	cond;
+	pthread_mutex_t	lock;
+}				t_thread;
+
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
 void scan(struct sockaddr_in *ping_addr, t_info *info);
