@@ -2,5 +2,6 @@
 
 void scan_syn()
 {
-    printf("scan_syn\n");
+    printf(">>> scan_syn\n");
+	
 }

@@ -8,7 +8,7 @@ OBJ_DIR		= 	obj/
 SUBDIR		=	obj/network
 
 CC			= gcc
-CFLAGS		= -lm -Wall -Werror -Wextra -g -MMD -MP
+CFLAGS		= -lm -Wall -Werror -Wextra -g -O0 -MMD -MP
 
 RM			= rm -rf
 AR			= ar rcs
