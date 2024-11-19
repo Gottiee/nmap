@@ -34,6 +34,7 @@ typedef struct	s_thread
 	bool	data_ready;
 	uint8_t	id;
 	uint16_t	port_nb;
+	int	sockfd;
 	pthread_cond_t	cond;
 	pthread_mutex_t	lock;
 }				t_thread;
@@ -45,7 +46,7 @@ void scan(struct sockaddr_in *ping_addr, t_info *info);
 void scan_ack();
 void scan_fin();
 void scan_null();
-void scan_syn();
+bool scan_syn();
 void scan_xmas();
 void scan_udp();
 void setup_filter(char *filter_str, pcap_t *handle);

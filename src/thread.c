@@ -4,6 +4,16 @@ pthread_mutex_t	g_print_lock;
 pthread_mutex_t	g_lock;
 bool	g_done = 0;
 
+bool	check_g_done( void )
+{
+	bool	ret = 0;
+
+	pthread_mutex_lock(&g_lock);
+	ret = g_done;
+	pthread_mutex_unlock(&g_lock);
+	return (ret);
+}
+
 void *scan_routine(void *port_struct)
 {
 	// pcap_if_t *alldvsp = NULL;
@@ -23,24 +33,14 @@ void *scan_routine(void *port_struct)
 	pthread_mutex_lock(&th_struct->lock);
 	while (1)
 	{
-		pthread_mutex_lock(&g_lock);
-		if (g_done == 1)
-		{
-			pthread_mutex_unlock(&g_lock);
+		if (check_g_done() == 1)
 			break ;
-		}
-		pthread_mutex_unlock(&g_lock);
 		gettimeofday((struct timeval *)&wait_time, NULL);
 		wait_time.tv_sec += 1;
 		while (th_struct->data_ready == 0 && wait_ret != ETIMEDOUT)
 		{
-			pthread_mutex_lock(&g_lock);
-			if (g_done == 1)
-			{
-				pthread_mutex_unlock(&g_lock);
+			if (check_g_done() == 1)
 				break ;
-			}
-			pthread_mutex_unlock(&g_lock);
 			wait_ret = pthread_cond_timedwait(&th_struct->cond, &th_struct->lock, &wait_time);
 			if (wait_ret == ETIMEDOUT)
 			{
@@ -68,39 +68,30 @@ bool	child_thread_main( pthread_t **threads, t_thread **ths_struct, const t_info
 {
 	*ths_struct = malloc(sizeof(t_thread) * info->nb_thread);
 	if (*ths_struct == NULL)
-	{
-		fprintf(stderr, "Malloc error \"thread_id\"");
-		return (1);
-	}
-	// printf("malloc struct addr = %p\n", *ths_struct);
-
-	// pthread_mutex_init(&mutex, NULL);
+		return (return_error("ft_nmap: malloc"));
 	(*threads) = malloc(sizeof(pthread_t) * info->nb_thread);
 	if ((*threads) == NULL)
-	{
-		fprintf(stderr, "Malloc error \"thread_id\"");
-		return (1);
-	}
+		return (return_error("ft_nmap: malloc"));
 	// printf("%d bytes allocated\n", info->nb_thread);
 
-	pthread_mutex_init(&g_print_lock, NULL);
-	pthread_mutex_init(&g_lock, NULL);
+	if (pthread_mutex_init(&g_print_lock, NULL) != 0)
+		return (return_error("ft_nmap: mutex_init"));
+	if (pthread_mutex_init(&g_lock, NULL) != 0)
+		return (return_error("ft_nmap: mutex_init"));
 	for (uint8_t i = 0; i < info->nb_thread; i++)
 	{
 		(*ths_struct)[i].is_free = 1;
 		(*ths_struct)[i].id = i;
 		(*ths_struct)[i].data_ready = 0;
+		(*ths_struct)[i].sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
+		if ((*ths_struct)[i].sockfd == -1)
+			return (return_error("ft_nmap: socket"));
 		if (pthread_mutex_init(&((*ths_struct)[i].lock), NULL) != 0)
-			printf("thread init failed\n");
+			return (return_error("ft_nmap: mutex_init"));
 		if (pthread_cond_init(&((*ths_struct)[i].cond), NULL) != 0)
-			printf("cond init failed\n");
-		
-		// printf("thread_main > struct[%d] addr = %p\n", i, &(*ths_struct)[i]);
+			return (return_error("ft_nmap: cond_init"));
 		if (pthread_create(&((*threads)[i]), NULL, &scan_routine, &((*ths_struct)[i])) != 0)
-		{
-			fprintf(stderr, "pthread_create failed\n");
-			return (1);
-		}
+			return (return_error("ft_nmap: pthread_create"));
 		pthread_mutex_lock(&g_print_lock);
 		printf("thread_create(%d)\n", i);
 		pthread_mutex_unlock(&g_print_lock);
@@ -137,6 +128,7 @@ bool	closing_threading_ressources( pthread_t **threads, t_thread **ths_struct, t
 			}
 			return (1);
 		}
+		close((*ths_struct)[i].sockfd);
 		pthread_cond_destroy(&((*ths_struct)[i].cond));
 		pthread_mutex_destroy(&((*ths_struct)[i].lock));
 		pthread_mutex_lock(&g_print_lock);
@@ -155,12 +147,7 @@ void threading_scan_port(t_info *info, t_host *host)
 	t_thread	*ths_struct = NULL;
 
 	if (child_thread_main(&threads, &ths_struct, info) == 1)
-	{
-		fprintf(stderr, "init_value() failed\n");
 		return ;
-	}
-	// sleep(2);
-	// printf("main > struct addr = %p\n", ths_struct);
 
 	int	port = 0;
 	//	BOUCLE PRINCIPALE

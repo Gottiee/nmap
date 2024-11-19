@@ -46,5 +46,8 @@ typedef struct s_info
 	t_host *start_host;
 } t_info;
 
+//	UTILS.C
+bool	return_error( char *err_mess );
+
 
 #endif

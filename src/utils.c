@@ -1,5 +1,11 @@
 #include "../inc/nmap.h"
 
+bool	return_error( char *err_mess )
+{
+	perror(err_mess);
+	return (1);
+}
+
 double time_till_start(struct timeval *start)
 {
 	struct timeval end;

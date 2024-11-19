@@ -10,11 +10,11 @@ void	print_usage( void )
 	printf("--ip: is required. hostname is a hostname and ip_addr a IPv4 ip address.\n");
 }
 
-bool	return_error( char *s_err )
-{
-	fprintf(stderr, "%s\n", s_err);
-	return (1);
-}
+// bool	return_error( char *s_err )
+// {
+// 	fprintf(stderr, "%s\n", s_err);
+// 	return (1);
+// }
 
 char	**error_handling( char ***hostnames )
 {
