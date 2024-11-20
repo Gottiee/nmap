@@ -6,30 +6,30 @@ void	init_values( t_info *info )
 	info->nb_thread = 0;
 	info->scan_type = ALL;
 
-	info->port_info->nbr_of_port_scan = 1024;
-	for (uint16_t i = 0; i < 1024; i++)
-	{
-		info->port_info->to_scan[i] = i + 1;
-	}
+	info->first_port = 0;
+	info->port_range = 1024;
+	// for (uint16_t i = 0; i < 1024; i++)
+	// {
+	// 	info->port_info->to_scan[i] = i + 1;
+	// }
 }
 
 void ping_and_scan(t_info *info, struct timeval *start)
 {
     t_host *start_host = NULL;
 	t_host *current_host = NULL;
-    struct sockaddr_in ping_addr;
 	int pinged = 0;
 	int success = 0;
 
 	for (int i = 0; info->hostnames[i]; i++)
 	{
-		if (!fill_sockaddr_in(info->hostnames[i], &ping_addr))
+		if (!fill_sockaddr_in(info->hostnames[i], &info->ping_addr))
 		{
 			fprintf(stderr, "Failed to resolve \"%s\".\n", info->hostnames[i]);
 			continue;
 		}
 		pinged ++;
-		if (!ping_ip(&ping_addr))
+		if (!ping_ip(&info->ping_addr))
 			continue;
 		success ++;
 		
@@ -44,7 +44,7 @@ void ping_and_scan(t_info *info, struct timeval *start)
 		if (info->nb_thread > 0)
 			threading_scan_port(info, current_host);
 		else
-			scan(&ping_addr, info);
+			scan(&info->ping_addr, info);
 	}
 
 	double second = time_till_start(start);
@@ -59,7 +59,7 @@ int main( int argc, char **argv )
 	struct timeval start;
 
     gettimeofday(&start, NULL);
-    info.port_info = &info_ports;
+    // info.port_info = &info_ports;
 
 	init_values(&info);
 	info.hostnames = handle_arg(argc, &argv, &info, &info_ports);

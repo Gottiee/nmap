@@ -1,6 +1,7 @@
 #include "../../inc/nmap.h"
 
-void scan_xmas()
+bool scan_xmas()
 {
     printf("scan_xmas\n");
+	return (0);
 }

@@ -29,5 +29,6 @@ typedef struct s_icmp_data
 } t_icmp_data;
 
 bool ping_ip(struct sockaddr_in *ping_address);
+unsigned short	checksum( void *b, int len );
 
 #endif

@@ -1,6 +1,7 @@
 #include "../../inc/nmap.h"
 
-void scan_ack()
+bool scan_ack()
 {
     printf("scan_ack\n");
+	return (0);
 }

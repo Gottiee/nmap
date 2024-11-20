@@ -9,11 +9,31 @@
 
 typedef struct s_scan_port
 {
-	int port_nbr;
+	uint8_t	th_id;	//	JUSTE POUR LE DEBUG
+	
+	char	hostname[NI_MAXHOST];
+	struct sockaddr_in	ping_addr;
+	uint16_t nb;
 	char *service;
 	int state[7];
-	int *type_scan;
+	int		sockfd;
+	struct tcphdr	*tcp_h;
 } t_scan_port;
+
+typedef struct	s_thread_arg
+{
+	//	THREAD
+	uint8_t	id;
+	bool	is_free;
+	bool	data_ready;
+	pthread_cond_t	cond;
+	pthread_mutex_t	lock;
+
+	//	SCAN
+	t_scan_port	port;
+	uint8_t	scan_type;	
+}				t_thread_arg;
+
 
 typedef struct s_info_port
 {
@@ -28,27 +48,17 @@ typedef struct s_host
 	struct s_host *next;
 } t_host;
 
-typedef struct	s_thread
-{
-	bool	is_free;
-	bool	data_ready;
-	uint8_t	id;
-	uint16_t	port_nb;
-	int	sockfd;
-	pthread_cond_t	cond;
-	pthread_mutex_t	lock;
-}				t_thread;
-
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
 void scan(struct sockaddr_in *ping_addr, t_info *info);
 
-void scan_ack();
-void scan_fin();
-void scan_null();
-bool scan_syn();
-void scan_xmas();
-void scan_udp();
+bool scan_all();
+bool scan_ack();
+bool scan_fin();
+bool scan_null();
+bool scan_syn( t_scan_port *port );
+bool scan_xmas();
+bool scan_udp();
 void setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler(char *device);
 pcap_if_t *init_device();

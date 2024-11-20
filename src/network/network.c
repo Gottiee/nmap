@@ -9,112 +9,114 @@
 
 void setup_filter(char *filter_str, pcap_t *handle)
 {
-    struct bpf_program filter;
-    if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
-        fatal_error_str("Bad filter: %s\n", pcap_geterr(handle));
-    if (pcap_setfilter(handle, &filter) == -1)
-        fatal_error_str("Error setting filters: %s\n", pcap_geterr(handle));
-    pcap_freecode(&filter);
+	struct bpf_program filter;
+	if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
+		fatal_error_str("Bad filter: %s\n", pcap_geterr(handle));
+	if (pcap_setfilter(handle, &filter) == -1)
+		fatal_error_str("Error setting filters: %s\n", pcap_geterr(handle));
+	pcap_freecode(&filter);
 }
 
 pcap_t *init_handler(char *device)
 {
-    pcap_t *handle;
-    int packet_count_limit = 1;
-    int timeout_limit = 10000; /* In milliseconds */
-    char error_buffer[PCAP_ERRBUF_SIZE];
+	pcap_t *handle;
+	int packet_count_limit = 1;
+	int timeout_limit = 10000; /* In milliseconds */
+	char error_buffer[PCAP_ERRBUF_SIZE];
 
-    handle = pcap_open_live(device, BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
-    if (!handle)
-        fatal_error_str("%s\n", error_buffer);
-    return handle;
+	handle = pcap_open_live(device, BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
+	if (!handle)
+		fatal_error_str("%s\n", error_buffer);
+	return handle;
 }
 
 pcap_if_t *init_device()
 {
-    char error_buffer[PCAP_ERRBUF_SIZE];
-    pcap_if_t *alldvsp = NULL;
+	char error_buffer[PCAP_ERRBUF_SIZE];
+	pcap_if_t *alldvsp = NULL;
 
-    /* Find a device */
-    if (pcap_findalldevs(&alldvsp, error_buffer))
-        fatal_error_str("%s\n", error_buffer);
-    return alldvsp;
+	/* Find a device */
+	if (pcap_findalldevs(&alldvsp, error_buffer))
+		fatal_error_str("%s\n", error_buffer);
+	return alldvsp;
 }
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 {
-    struct addrinfo hints, *res;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    if ((getaddrinfo(input_domain, NULL, &hints, &res)) != 0)
-        return false;
-    ping_addr->sin_family = AF_INET;
-    ping_addr->sin_port = htons(0);
-    ping_addr->sin_addr = ((struct sockaddr_in *)res->ai_addr)->sin_addr;
-    freeaddrinfo(res);
-    return true;
+	struct addrinfo hints, *res;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	if ((getaddrinfo(input_domain, NULL, &hints, &res)) != 0)
+		return (0);
+	ping_addr->sin_family = AF_INET;
+	ping_addr->sin_port = htons(0);
+	ping_addr->sin_addr = ((struct sockaddr_in *)res->ai_addr)->sin_addr;
+	freeaddrinfo(res);
+	return (1);
 }
 
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr) 
 {
-    memset(ping_addr, 0, sizeof(struct sockaddr_in));
+	memset(ping_addr, 0, sizeof(struct sockaddr_in));
 
-    // tcheck si c'est une address ipv4
-    if (inet_pton(AF_INET, target, &ping_addr->sin_addr) == 1) {
-        ping_addr->sin_family = AF_INET;
-        ping_addr->sin_port = htons(0);
-        return true;
-    }
-    if (!dns_lookup(target, ping_addr))
-        return false;
-    return true;
+	// tcheck si c'est une address ipv4
+	if (inet_pton(AF_INET, target, &ping_addr->sin_addr) == 1) {
+		ping_addr->sin_family = AF_INET;
+		ping_addr->sin_port = htons(0);
+		return (1);
+	}
+	if (!dns_lookup(target, ping_addr))
+		return (0);
+	return (1);
 }
 
-void scan_all()
+bool scan_all()
 {
-    printf("scan ALL\n");
+	printf("scan ALL\n");
+	return (0); 
 }
 
 void scan(struct sockaddr_in *ping_addr, t_info *info)
 {
-    (void)ping_addr;
-    pcap_if_t *alldvsp = NULL;
-    pcap_t *handle = NULL;
+	(void)ping_addr;
+	(void)info;
+	pcap_if_t *alldvsp = NULL;
+	pcap_t *handle = NULL;
 
-    // liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
-    alldvsp = init_device();
-    // creer un handler, qui va servir à ecouter sur l'interface seletionnée
-    handle = init_handler(alldvsp->name);
+	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
+	alldvsp = init_device();
+	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
+	handle = init_handler(alldvsp->name);
 
-    switch (info->scan_type)
-    {
-        case (ALL):
-            scan_all();
-            break;
-        case(UDP):
-            scan_udp();
-            break;
-        case(SYN):
-            scan_syn();
-            break;
-        case(S_NULL):
-            scan_null();
-            break;
-        case(ACK):
-            scan_ack();
-            break;
-        case(XMAS):
-            scan_xmas();
-            break;
-        case(FIN):
-            scan_fin();
-            break;
-        default:
-            fatal_error("NANI\n");
-            break;
-    }
+	// switch (info->scan_type)
+	// {
+	// 	case (ALL):
+	// 		scan_all();
+	// 		break;
+	// 	case(UDP):
+	// 		scan_udp();
+	// 		break;
+	// 	case(SYN):
+	// 		scan_syn();
+	// 		break;
+	// 	case(S_NULL):
+	// 		scan_null();
+	// 		break;
+	// 	case(ACK):
+	// 		scan_ack();
+	// 		break;
+	// 	case(XMAS):
+	// 		scan_xmas();
+	// 		break;
+	// 	case(FIN):
+	// 		scan_fin();
+	// 		break;
+	// 	default:
+	// 		fatal_error("NANI\n");
+	// 		break;
+	// }
 
-    pcap_freealldevs(alldvsp);
-    pcap_close(handle);
+	pcap_freealldevs(alldvsp);
+	pcap_close(handle);
 }

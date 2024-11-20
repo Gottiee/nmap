@@ -10,11 +10,11 @@ void	print_usage( void )
 	printf("--ip: is required. hostname is a hostname and ip_addr a IPv4 ip address.\n");
 }
 
-// bool	return_error( char *s_err )
-// {
-// 	fprintf(stderr, "%s\n", s_err);
-// 	return (1);
-// }
+bool	parsing_return_error( char *s_err )
+{
+	fprintf(stderr, "%s\n", s_err);
+	return (1);
+}
 
 char	**error_handling( char ***hostnames )
 {
@@ -63,7 +63,7 @@ bool	define_scan( char ***argv, t_info *info )
 				info->scan_type = UDP;
 				break ;
 			default:
-			return (return_error("Format error: scan: Invalid value"));
+			return (parsing_return_error("Format error: scan: must be within this list -> SYN, NULL, ACK, FIN, XMAS, UDP"));
 		}
 		++(*argv);
 	}
@@ -75,7 +75,7 @@ bool	get_port_number( unsigned short (*port_range)[2], char *argv, bool first )
 	uint8_t	i = 0;
 	char	s[6] = {0};
 	char	sep = 0;
-	sep = (first == true ? '/' : '\0');
+	sep = (first == 1 ? '/' : '\0');
 
 	if (argv == NULL || *argv == '\0')
 		return (return_error("Format error: port: missing port number"));
@@ -237,14 +237,13 @@ char	**init_hostnames( bool single, char ***argv )
 	if (single)
 		hostnames = init_single_hostname(argv);
 	else
-	{
 		hostnames = init_multiple_hostnames(argv);
-	}
 	return (hostnames);
 }
 
 char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports )
 {
+	(void)info_ports;
 	char	**hostnames = NULL;
 	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", NULL};
 	uint8_t	i = 0;
@@ -282,7 +281,7 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 					return (error_handling(&hostnames));
 				break ;
 			case 3:
-				hostnames = init_hostnames(true, argv);
+				hostnames = init_hostnames(1, argv);
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
 				break ;
@@ -290,13 +289,14 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 				++(*argv);
 				if (define_ports(&port_range, **argv) == 1)
 					return (error_handling(&hostnames));
-				info_ports->nbr_of_port_scan = port_range[1] - port_range[0] + 1;
-				bzero(info_ports->to_scan, 1024 * sizeof(unsigned short));
-				for (unsigned short i = port_range[0]; i <= port_range[1]; i++)
-					info_ports->to_scan[i - port_range[0]] = i;
+				info->port_range = port_range[1] - port_range[0] + 1;
+				info->first_port = port_range[0];
+				// bzero(info_ports->to_scan, 1024 * sizeof(unsigned short));
+				// for (unsigned short i = port_range[0]; i <= port_range[1]; i++)
+				// 	info_ports->to_scan[i - port_range[0]] = i;
 				break ;
 			case 5:
-				hostnames = init_hostnames(false, argv);
+				hostnames = init_hostnames(0, argv);
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
 				break ;

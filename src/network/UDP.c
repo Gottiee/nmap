@@ -1,6 +1,7 @@
 #include "../../inc/nmap.h"
 
-void scan_udp()
+bool scan_udp()
 {
     printf("scan_udp\n");
+	return (0);
 }
