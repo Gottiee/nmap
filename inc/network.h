@@ -17,7 +17,7 @@ typedef struct s_scan_port
 	char *service;
 	int state[7];
 	int		sockfd;
-	struct tcphdr	*tcp_h;
+	struct tihdr	*ip_h;
 } t_scan_port;
 
 typedef struct	s_thread_arg

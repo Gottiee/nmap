@@ -96,10 +96,12 @@ bool	child_thread_main( pthread_t **threads, t_thread_arg **ths_struct, const t_
 		return (return_error("ft_nmap: mutex_init"));
 	for (uint8_t i = 0; i < info->nb_thread; i++)
 	{
-		memcpy(&((*ths_struct)->port.ping_addr), &(info->ping_addr), sizeof(struct sockaddr_in));
+		memcpy(&((*ths_struct)[i].port.ping_addr), &(info->ping_addr), sizeof(struct sockaddr_in));
+
+		printf("(%d) memcpy -> %s\n", i, inet_ntoa((*ths_struct)[i].port.ping_addr.sin_addr));
 		(*ths_struct)[i].is_free = 1;
 		(*ths_struct)[i].id = i;
-		(*ths_struct)[i].port.th_id = i;	//	JUTE POUR LE DEBUG
+		(*ths_struct)[i].port.th_id = i;	//	POUR LE DEBUG
 		(*ths_struct)[i].data_ready = 0;
 		(*ths_struct)[i].port.sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 		if ((*ths_struct)[i].port.sockfd == -1)
@@ -116,9 +118,6 @@ bool	child_thread_main( pthread_t **threads, t_thread_arg **ths_struct, const t_
 			return (return_error("ft_nmap: cond_init"));
 		if (pthread_create(&((*threads)[i]), NULL, &scan_routine, &((*ths_struct)[i])) != 0)
 			return (return_error("ft_nmap: pthread_create"));
-		pthread_mutex_lock(&g_print_lock);
-		printf("thread_create(%d)\n", i);
-		pthread_mutex_unlock(&g_print_lock);
 	}
 	return (0);
 }
@@ -128,9 +127,9 @@ bool	closing_threading_ressources( pthread_t **threads, t_thread_arg **ths_struc
 	int	ret = 0;
 	for (int i = 0; i < info->nb_thread; i++)
 	{
-		pthread_mutex_lock(&g_print_lock);
-		printf("(%d) joining ... \n", i);
-		pthread_mutex_unlock(&g_print_lock);
+		// pthread_mutex_lock(&g_print_lock);
+		// printf("(%d) joining ... \n", i);
+		// pthread_mutex_unlock(&g_print_lock);
 		ret = pthread_join((*threads)[i], NULL);
 		if (ret != 0)
 		{
@@ -155,9 +154,9 @@ bool	closing_threading_ressources( pthread_t **threads, t_thread_arg **ths_struc
 		close((*ths_struct)[i].port.sockfd);
 		pthread_cond_destroy(&((*ths_struct)[i].cond));
 		pthread_mutex_destroy(&((*ths_struct)[i].lock));
-		pthread_mutex_lock(&g_print_lock);
-		printf("(%d) joined\n", i);
-		pthread_mutex_unlock(&g_print_lock);
+		// pthread_mutex_lock(&g_print_lock);
+		// printf("(%d) joined\n", i);
+		// pthread_mutex_unlock(&g_print_lock);
 	}
 	free(*threads);
 	free((*ths_struct)->port.tcp_h);
@@ -170,6 +169,8 @@ void threading_scan_port(t_info *info, t_host *host)
 	(void) host;
 	pthread_t	*threads = NULL;
 	t_thread_arg	*ths_struct = NULL;
+
+	printf("hostname == %s (%s)\n", info->hostnames[0], inet_ntoa(info->ping_addr.sin_addr));
 
 	if (child_thread_main(&threads, &ths_struct, info) == 1)
 		return ;
@@ -205,9 +206,9 @@ void threading_scan_port(t_info *info, t_host *host)
 	g_done = 1;
 	pthread_mutex_unlock(&g_lock);
 
-	pthread_mutex_lock(&g_print_lock);
-	printf("Infinite loop finished\n");
-	pthread_mutex_unlock(&g_print_lock);
+	// pthread_mutex_lock(&g_print_lock);
+	// printf("Infinite loop finished\n");
+	// pthread_mutex_unlock(&g_print_lock);
 
 	if (closing_threading_ressources(&threads, &ths_struct, info) == 1)
 	{

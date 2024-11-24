@@ -15,6 +15,7 @@ typedef struct s_info t_info;
 #include <ctype.h>
 #include <sys/time.h>
 #include <netinet/tcp.h>
+#include <netinet/ip.h>
 
 
 typedef struct s_info t_info;
