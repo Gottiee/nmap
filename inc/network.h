@@ -17,15 +17,15 @@ typedef struct s_scan_port
 	char *service;
 	int state[7];
 	int		sockfd;
-	struct tihdr	*ip_h;
+	struct tcphdr	*tcp_h;
+	bool	done;
 } t_scan_port;
 
 typedef struct	s_thread_arg
 {
 	//	THREAD
 	uint8_t	id;
-	bool	is_free;
-	bool	data_ready;
+	uint	max_port;
 	pthread_cond_t	cond;
 	pthread_mutex_t	lock;
 
@@ -52,7 +52,7 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
 void scan(struct sockaddr_in *ping_addr, t_info *info);
 
-bool scan_all();
+bool scan_all( uint8_t th_id );
 bool scan_ack();
 bool scan_fin();
 bool scan_null();

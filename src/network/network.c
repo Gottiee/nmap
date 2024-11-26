@@ -71,9 +71,9 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-bool scan_all()
+bool scan_all(uint8_t th_id)
 {
-	printf("scan ALL\n");
+	printf("(%d)scan ALL\n", th_id);
 	return (0); 
 }
 
