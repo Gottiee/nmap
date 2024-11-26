@@ -2,7 +2,6 @@
 
 pthread_mutex_t	g_print_lock;
 pthread_mutex_t	g_lock;
-// pthread_cond_t	g_cond;
 bool	g_done = 0;
 
 void	*scan_routine( void *arg );
@@ -66,7 +65,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 		pthread_mutex_destroy(&g_print_lock);
 		free_struct(threads, tab_th_info);
 		fatal_perror("ft_nmap: mutex_init");
-	}
+	}	
 
 
 	for (uint8_t i = 0; i < info->nb_thread; i++)
@@ -106,20 +105,35 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 void	*scan_routine( void *arg )
 {
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
+	struct timespec	wait_time;
 
 	pthread_mutex_lock(&(th_info->lock));
 	while (check_g_done() == 0)
 	{
+		// pthread_mutex_lock(&g_print_lock); printf("(%d) g_done == %d\n", th_info->id, check_g_done()); pthread_mutex_unlock(&g_print_lock);
+		// pthread_mutex_lock(&g_print_lock); printf("(%d) Waiting ... \n", th_info->id); pthread_mutex_unlock(&g_print_lock);
+		gettimeofday((struct timeval *)&wait_time, NULL);
+		wait_time.tv_nsec += 500;
+		th_info->data_ready = 0;
 		while (check_g_done() == 0 && th_info->data_ready == 0)
 		{
 			pthread_cond_wait(&th_info->cond, &(th_info->lock));
+			// pthread_cond_timedwait(&th_info->cond, &(th_info->lock), &wait_time);
 		}
-		th_info->data_ready = 0;
+
+		if (th_info->id == 0)
+		{
+			pthread_mutex_lock(&g_print_lock); printf("(%d) Signal recv port == %d... \n", th_info->id, th_info->port.nb); pthread_mutex_unlock(&g_print_lock);
+		}
 		
 		if (check_g_done() == 1 && th_info->data_ready == 0)
+		{
+			pthread_mutex_lock(&g_print_lock); printf("(%d) Finishing routine (g_done == 1 && th_info_ready == 0) ... \n", th_info->id); pthread_mutex_unlock(&g_print_lock);
 			break ;
+		}
 		pthread_mutex_lock(&g_print_lock);printf("(%d) Scanning %d ...\n", th_info->id, th_info->port.nb);pthread_mutex_unlock(&g_print_lock);
 	}
+	pthread_mutex_lock(&g_print_lock);printf("(%d) Finishing routine ... \n", th_info->id);pthread_mutex_unlock(&g_print_lock);
 	pthread_mutex_unlock(&(th_info->lock));
 	return (NULL);
 }
@@ -149,6 +163,7 @@ void threading_scan_port(t_info *info, t_host *host)
 				}
 				tab_th_info[th_id].port.nb = port;
 				pthread_cond_signal(&tab_th_info[th_id].cond);
+				pthread_mutex_lock(&g_print_lock);printf("(main) cond_signal -> %d: port %d\n", th_id, port); pthread_mutex_unlock(&g_print_lock);
 				tab_th_info[th_id].data_ready = 1;
 				pthread_mutex_unlock(&(tab_th_info[th_id].lock));
 				port++;
@@ -157,25 +172,14 @@ void threading_scan_port(t_info *info, t_host *host)
 		}
 	}
 	
-	sleep(1);
 	pthread_mutex_lock(&g_lock);
 	g_done = 1;
+	pthread_mutex_lock(&g_print_lock); printf(">> (main) Setting g_lock -> 1 << \n"); pthread_mutex_unlock(&g_print_lock);
 	pthread_mutex_unlock(&g_lock);
 
-	for (uint8_t th_id = 0; th_id < info->nb_thread; th_id++)
-	{
-		if (pthread_mutex_lock(&(tab_th_info[th_id].lock)) == 0)
-		{
-			if (tab_th_info[th_id].data_ready == 1)
-			{
-				pthread_mutex_unlock(&(tab_th_info[th_id].lock));
-				continue ;
-			}
-			pthread_cond_signal(&tab_th_info[th_id].cond);
-			pthread_mutex_unlock(&(tab_th_info[th_id].lock));
-			usleep(1);
-		}
-	}
+	for (tous les threads)
+		signal(thread);
 
 	close_threads(threads, tab_th_info, info->nb_thread);
+
 }

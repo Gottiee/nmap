@@ -9,15 +9,14 @@
 
 typedef struct s_scan_port
 {
-	uint8_t	th_id;	//	JUSTE POUR LE DEBUG
+	// uint8_t	th_id;	//	JUSTE POUR LE DEBUG
 	
 	char	hostname[NI_MAXHOST];
 	struct sockaddr_in	ping_addr;
 	uint16_t nb;
 	char *service;
 	int state[7];
-	int		sockfd;
-	struct tcphdr	*tcp_h;
+	
 	bool	done;
 } t_scan_port;
 
@@ -25,9 +24,11 @@ typedef struct	s_thread_arg
 {
 	//	THREAD
 	uint8_t	id;
-	uint	max_port;
+	// uint	max_port;
 	pthread_cond_t	cond;
 	pthread_mutex_t	lock;
+	bool	data_ready;
+	bool	is_free;
 
 	//	SCAN
 	t_scan_port	port;
