@@ -106,38 +106,6 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 	}
 }
 
-void	scan_thread( const uint8_t scan_type, t_scan_port *to_scan, const uint8_t th_id )
-{
-	pthread_mutex_lock(&g_print_lock);printf("(%d) Scanning %d ...\n", th_id, to_scan->nb);pthread_mutex_unlock(&g_print_lock);
-	switch (scan_type)
-	{
-		case ALL:
-			scan_all(to_scan, th_id);
-			break ;
-		case SYN:
-			scan_syn(to_scan, th_id);
-			break ;
-		case S_NULL:
-			scan_null(to_scan, th_id);
-			break ;
-		case ACK:
-			scan_ack(to_scan, th_id);
-			break ;
-		case FIN:
-			scan_fin(to_scan, th_id);
-			break ;
-		case XMAS:
-			scan_xmas(to_scan, th_id);
-			break ;
-		case UDP:
-			scan_udp(to_scan, th_id);
-			break ;
-		default:
-			pthread_mutex_lock(&g_print_lock);printf("(%d) Unknown scan type (%hhu)\n", th_id, scan_type);pthread_mutex_unlock(&g_print_lock);
-			break ;
-	}
-}
-
 void	*scan_routine( void *arg )
 {
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
@@ -153,7 +121,7 @@ void	*scan_routine( void *arg )
 		if (check_g_done() == 1 && th_info->data_ready == 0)
 			break ;
 // pthread_mutex_lock(&g_print_lock);printf("(%d) Scanning %d ...\n", th_info->id, th_info->host->port_tab[th_info->index_port].nb);pthread_mutex_unlock(&g_print_lock);
-		scan_thread(th_info->scan_type, &th_info->host->port_tab[th_info->index_port], th_info->id);
+		scan_switch(&th_info->host->port_tab[th_info->index_port], th_info->host, th_info->scan_type, th_info->id);
 	}
 	pthread_mutex_unlock(&(th_info->lock));
 	return (NULL);

@@ -13,4 +13,7 @@ void	super_print( t_host *host, t_info *info )
 		}
 		host = host->next;
 	}
+	double second = time_till_start(&info->time_start);
+	printf("Nmap done: %d IP address (%d host up) scanned in %0.2f seconds\n", 
+				info->nb_host_ping, info->nb_host_ping_success, second);
 }

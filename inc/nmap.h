@@ -14,9 +14,6 @@ typedef struct s_info t_info;
 #include <string.h>
 #include <ctype.h>
 #include <sys/time.h>
-#include <netinet/tcp.h>
-#include <netinet/ip.h>
-
 
 typedef struct s_info t_info;
 
@@ -45,9 +42,12 @@ typedef struct s_info
 	char	**hostnames;
 	int nb_thread;
 	int scan_type;
+	int	nb_host_ping;
+	int	nb_host_ping_success;
 	uint16_t	first_port;
 	uint16_t	port_range;
 	t_host *start_host;
+	struct timeval time_start;
 	struct sockaddr_in	ping_addr;
 } t_info;
 

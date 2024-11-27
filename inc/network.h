@@ -1,11 +1,16 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <netinet/ip.h>
+
 #define NO_THREAD 0
 
 #define OPEN 1
 #define CLOSE 2
 #define FILTERED 3
+#define OPEN_FILT 4
 #include <stdbool.h>
 #include <pcap.h>
 
@@ -14,6 +19,8 @@ typedef struct s_scan_port
 	uint16_t nb;
 	char *service;
 	int state; // open / filtered...
+
+ #define port_nb 
 
 	bool done;
 } t_scan_port;
@@ -46,13 +53,14 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
 void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host);
 
-bool scan_all( t_scan_port *port, const uint8_t th_id );
-bool scan_ack( t_scan_port *port, const uint8_t th_id );
-bool scan_fin( t_scan_port *port, const uint8_t th_id );
-bool scan_null( t_scan_port *port, const uint8_t th_id );
-bool scan_syn( t_scan_port *port, const uint8_t th_id );
-bool scan_xmas( t_scan_port *port, const uint8_t th_id );
-bool scan_udp( t_scan_port *port, const uint8_t th_id );
+void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id);
+bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id );
+bool scan_ack( t_scan_port *port, t_host *host, const uint8_t th_id );
+bool scan_fin( t_scan_port *port, t_host *host, const uint8_t th_id );
+bool scan_null( t_scan_port *port, t_host *host, const uint8_t th_id );
+bool scan_syn( t_scan_port *port, t_host *host, const uint8_t th_id );
+bool scan_xmas( t_scan_port *port, t_host *host, const uint8_t th_id );
+bool scan_udp( t_scan_port *port, t_host *host, const uint8_t th_id );
 void setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler(char *device);
 pcap_if_t *init_device();

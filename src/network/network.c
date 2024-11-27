@@ -71,60 +71,70 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-bool scan_all( t_scan_port *port, const uint8_t th_id )
+void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id)
 {
+	switch (scan_type)
+	{
+		case ALL:
+			scan_all(port, host, th_id);
+			break ;
+		case SYN:
+			scan_syn(port, host, th_id);
+			break ;
+		case S_NULL:
+			scan_null(port, host, th_id);
+			break ;
+		case ACK:
+			scan_ack(port, host, th_id);
+			break ;
+		case FIN:
+			scan_fin(port, host, th_id);
+			break ;
+		case XMAS:
+			scan_xmas(port, host, th_id);
+			break ;
+		case UDP:
+			scan_udp(port, host, th_id);
+			break ;
+		default:
+			break ;
+	}
+}
+
+bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id )
+{
+	(void)host;
 	(void) th_id;
 	// t_info	*info = NULL; //  A RETIRER !!!!
 	printf("(%d)scan ALL\n", th_id);
-	scan_syn(port, th_id);
-	scan_null(port, th_id);
-	scan_ack(port, th_id);
-	scan_fin(port, th_id);
-	scan_xmas(port, th_id);
-	scan_udp(port, th_id);
+	scan_syn(port, host, th_id);
+	scan_null(port, host, th_id);
+	scan_ack(port, host, th_id);
+	scan_fin(port, host, th_id);
+	scan_xmas(port, host, th_id);
+	scan_udp(port, host, th_id);
 	return (0); 
 }
 
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host)
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 {
 	(void)ping_addr;
-	(void)current_host;
+	(void)host;
 	(void)info;
 	pcap_if_t *alldvsp = NULL;
 	pcap_t *handle = NULL;
-	t_scan_port *port = NULL; // A ENLEVER
+	uint16_t	port = info->first_port;
+	uint16_t	last_port = info->first_port + info->port_range;
 
 	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
 	alldvsp = init_device();
 	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
 	handle = init_handler(alldvsp->name);
 
-	switch (info->scan_type)
+	for (; port < last_port; port++)
 	{
-		case (ALL):
-			scan_all(port, NO_THREAD);
-			break;
-		case(UDP):
-			scan_udp(port, NO_THREAD);
-			break;
-		case(SYN):
-			scan_syn(port, NO_THREAD);
-			break;
-		case(S_NULL):
-			scan_null(port, NO_THREAD);
-			break;
-		case(ACK):
-			scan_ack(port, NO_THREAD);
-			break;
-		case(XMAS):
-			scan_xmas(port, NO_THREAD);
-			break;
-		case(FIN):
-			scan_fin(port, NO_THREAD);
-			break;
-		default:
-			fatal_error("NANI\n");
-			break;
+		host->port_tab[port - info->first_port].nb = port;
+		scan_switch(&host->port_tab[port - info->first_port], host, info->scan_type, NO_THREAD);
 	}
 
 	pcap_freealldevs(alldvsp);
