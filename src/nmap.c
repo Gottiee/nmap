@@ -35,39 +35,39 @@ void ping_and_scan(t_info *info, struct timeval *start)
 		
 		if (!start_host)
 		{
-			start_host = init_host_list(info->hostnames[i]);
+			start_host = init_host_list(info->hostnames[i], info);
 			info->start_host = start_host;
 			current_host = start_host;
 		}
 		else
-			current_host = add_host_list(info->hostnames[i], start_host);
-		if (info->nb_thread > 0)
-			threading_scan_port(info, current_host);
-		else
-			scan(&info->ping_addr, info);
+			current_host = add_host_list(info->hostnames[i], start_host, info);
+		if (info->nb_thread == 0)
+			scan(&info->ping_addr, info, current_host);
 	}
+	if (info->nb_thread > 0)
+		threading_scan_port(info, start_host);
 
 	double second = time_till_start(start);
 	printf("Nmap done: %d IP address (%d host up) scanned in %0.2f seconds\n", pinged, success, second);
-	free_host_list(start_host);
 }
 
 int main( int argc, char **argv )
 {
     t_info info;
-	t_info_port	info_ports;
 	struct timeval start;
 
     gettimeofday(&start, NULL);
-    // info.port_info = &info_ports;
 
 	init_values(&info);
-	info.hostnames = handle_arg(argc, &argv, &info, &info_ports);
+	info.hostnames = handle_arg(argc, &argv, &info);
 	if (info.hostnames == NULL)
 		exit (2);
 
 	ping_and_scan(&info, &start);
 	
+	super_print(info.start_host, &info);
+	free_host_list(info.start_host);
+
 	for (size_t i = 0; info.hostnames[i] != NULL; i++)
 		free(info.hostnames[i]);
 	free(info.hostnames);

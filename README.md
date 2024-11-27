@@ -91,3 +91,7 @@ char *return_string()
         return "http";
 }
 ```
+
+## TODO
+
+- [ ] free les malloc / la list chainee dans le fatalerror/ perror

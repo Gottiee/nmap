@@ -241,9 +241,8 @@ char	**init_hostnames( bool single, char ***argv )
 	return (hostnames);
 }
 
-char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports )
+char	**handle_arg( int argc, char ***argv, t_info *info )
 {
-	(void)info_ports;
 	char	**hostnames = NULL;
 	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", NULL};
 	uint8_t	i = 0;
@@ -291,9 +290,6 @@ char	**handle_arg( int argc, char ***argv, t_info *info, t_info_port *info_ports
 					return (error_handling(&hostnames));
 				info->port_range = port_range[1] - port_range[0] + 1;
 				info->first_port = port_range[0];
-				// bzero(info_ports->to_scan, 1024 * sizeof(unsigned short));
-				// for (unsigned short i = port_range[0]; i <= port_range[1]; i++)
-				// 	info_ports->to_scan[i - port_range[0]] = i;
 				break ;
 			case 5:
 				hostnames = init_hostnames(0, argv);

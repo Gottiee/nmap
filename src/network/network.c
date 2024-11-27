@@ -71,52 +71,61 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-bool scan_all(uint8_t th_id)
+bool scan_all( t_scan_port *port, const uint8_t th_id )
 {
 	(void) th_id;
-	// printf("(%d)scan ALL\n", th_id);
+	// t_info	*info = NULL; //  A RETIRER !!!!
+	printf("(%d)scan ALL\n", th_id);
+	scan_syn(port, th_id);
+	scan_null(port, th_id);
+	scan_ack(port, th_id);
+	scan_fin(port, th_id);
+	scan_xmas(port, th_id);
+	scan_udp(port, th_id);
 	return (0); 
 }
 
-void scan(struct sockaddr_in *ping_addr, t_info *info)
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host)
 {
 	(void)ping_addr;
+	(void)current_host;
 	(void)info;
 	pcap_if_t *alldvsp = NULL;
 	pcap_t *handle = NULL;
+	t_scan_port *port = NULL; // A ENLEVER
 
 	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
 	alldvsp = init_device();
 	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
 	handle = init_handler(alldvsp->name);
 
-	// switch (info->scan_type)
-	// {
-	// 	case (ALL):
-	// 		scan_all();
-	// 		break;
-	// 	case(UDP):
-	// 		scan_udp();
-	// 		break;
-	// 	case(SYN):
-	// 		scan_syn();
-	// 		break;
-	// 	case(S_NULL):
-	// 		scan_null();
-	// 		break;
-	// 	case(ACK):
-	// 		scan_ack();
-	// 		break;
-	// 	case(XMAS):
-	// 		scan_xmas();
-	// 		break;
-	// 	case(FIN):
-	// 		scan_fin();
-	// 		break;
-	// 	default:
-	// 		fatal_error("NANI\n");
-	// 		break;
-	// }
+	switch (info->scan_type)
+	{
+		case (ALL):
+			scan_all(port, NO_THREAD);
+			break;
+		case(UDP):
+			scan_udp(port, NO_THREAD);
+			break;
+		case(SYN):
+			scan_syn(port, NO_THREAD);
+			break;
+		case(S_NULL):
+			scan_null(port, NO_THREAD);
+			break;
+		case(ACK):
+			scan_ack(port, NO_THREAD);
+			break;
+		case(XMAS):
+			scan_xmas(port, NO_THREAD);
+			break;
+		case(FIN):
+			scan_fin(port, NO_THREAD);
+			break;
+		default:
+			fatal_error("NANI\n");
+			break;
+	}
 
 	pcap_freealldevs(alldvsp);
 	pcap_close(handle);

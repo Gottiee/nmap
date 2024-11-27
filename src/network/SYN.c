@@ -84,8 +84,10 @@ extern pthread_mutex_t	g_print_lock;
 // 	return (0);
 // }
 
-bool scan_syn( t_scan_port *port_info )
+bool scan_syn( t_scan_port *port, const uint8_t th_id )
 {
+	(void)port;
+	pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn()\n", th_id);pthread_mutex_unlock(&g_print_lock);
 	// printf("(%d) >>> scan_syn(): port_nb = %d | ping_addr == %s, \n", 
 	// 			port_info->th_id, port_info->nb, inet_ntoa(port_info->ping_addr.sin_addr));
 	// char	r_buf[IP_MAXPACKET] = {0};
@@ -107,8 +109,6 @@ bool scan_syn( t_scan_port *port_info )
 	// pthread_mutex_unlock(&g_print_lock);
 
 	// handle_return_packet(r_buf, port_info);
-
-	(void)port_info;
 
 	return (0);
 }

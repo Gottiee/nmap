@@ -1,7 +1,13 @@
 #include "../../inc/nmap.h"
 
-bool scan_udp()
+extern pthread_mutex_t	g_print_lock;
+
+bool scan_udp( t_scan_port *port, const uint8_t th_id )
 {
-    printf("scan_udp\n");
+	(void) port;
+	(void) th_id;
+	port->state = OPEN;
+	// printf("port %d state = open\n", port->nb);
+	// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_udp()\n", th_id);pthread_mutex_unlock(&g_print_lock);
 	return (0);
 }

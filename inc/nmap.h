@@ -33,10 +33,10 @@ typedef struct s_info t_info;
 #define ALL 0
 #define SYN 1
 #define S_NULL 2
-#define ACK 4
-#define FIN 8
-#define XMAS 16
-#define UDP 32
+#define ACK 3
+#define FIN 4
+#define XMAS 5
+#define UDP 6
 
 #define MAX_SCAN 65535
 
@@ -51,7 +51,7 @@ typedef struct s_info
 	struct sockaddr_in	ping_addr;
 } t_info;
 
-//	UTILS.C
-bool	return_error( char *err_mess );
+//	PRINT.C
+void	super_print( t_host *host, t_info *info );
 
 #endif

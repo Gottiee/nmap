@@ -28,7 +28,8 @@ network/FIN \
 network/NULL \
 network/ACK \
 icmp \
-utils
+utils \
+print
 
 
 C_FILES		=	$(addsuffix .c, $(SRC_FILES))

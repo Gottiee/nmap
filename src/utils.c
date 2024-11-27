@@ -14,7 +14,7 @@ double time_till_start(struct timeval *start)
     return (end.tv_sec - start->tv_sec) + (end.tv_usec - start->tv_usec) / 1e6;
 }
 
-t_host *add_host_list(char *name, t_host *start)
+t_host *add_host_list(char *name, t_host *start, t_info *info)
 {
     t_host *new = malloc(sizeof(t_host));
     if (!new)
@@ -25,17 +25,24 @@ t_host *add_host_list(char *name, t_host *start)
         start->next = new;
         new->next = NULL;
         new->name = name;
+		start->port_tab = malloc(sizeof(t_scan_port) * (info->port_range));
+		if (start->port_tab == NULL)
+			fatal_perror("Malloc error \"t_host *new\"");
     }
     return new;
 }
 
-t_host *init_host_list(char *name)
+t_host *init_host_list(char *name, t_info *info)
 {
     t_host *start = malloc(sizeof(t_host));
     if (!start)
         fatal_perror("Error malloc \"t_host start\"");
     start->next = NULL;
     start->name = name;
+	// printf("port_range == %d\n", info->port_range);
+	start->port_tab = malloc(sizeof(t_scan_port) * (info->port_range));
+	if (start->port_tab == NULL)
+			fatal_perror("Malloc error \"t_host *new\"");
     return start;
 }
 
@@ -45,6 +52,7 @@ void free_host_list(t_host *start)
     while (start)
     {
         tmp = start;
+		free(start->port_tab);
         start = start->next;
         free(tmp);
     }
