@@ -79,22 +79,22 @@ void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, cons
 			scan_all(port, host, th_id);
 			break ;
 		case SYN:
-			scan_syn(port, host, th_id);
+			scan_syn(port, *host, th_id);
 			break ;
 		case S_NULL:
-			scan_null(port, host, th_id);
+			scan_null(port, *host, th_id);
 			break ;
 		case ACK:
-			scan_ack(port, host, th_id);
+			scan_ack(port, *host, th_id);
 			break ;
 		case FIN:
-			scan_fin(port, host, th_id);
+			scan_fin(port, *host, th_id);
 			break ;
 		case XMAS:
-			scan_xmas(port, host, th_id);
+			scan_xmas(port, *host, th_id);
 			break ;
 		case UDP:
-			scan_udp(port, host, th_id);
+			scan_udp(port, *host, th_id);
 			break ;
 		default:
 			break ;
@@ -107,12 +107,12 @@ bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id )
 	(void) th_id;
 	// t_info	*info = NULL; //  A RETIRER !!!!
 	printf("(%d)scan ALL\n", th_id);
-	scan_syn(port, host, th_id);
-	scan_null(port, host, th_id);
-	scan_ack(port, host, th_id);
-	scan_fin(port, host, th_id);
-	scan_xmas(port, host, th_id);
-	scan_udp(port, host, th_id);
+	scan_syn(port, *host, th_id);
+	scan_null(port, *host, th_id);
+	scan_ack(port, *host, th_id);
+	scan_fin(port, *host, th_id);
+	scan_xmas(port, *host, th_id);
+	scan_udp(port, *host, th_id);
 	return (0); 
 }
 
