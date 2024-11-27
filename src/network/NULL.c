@@ -2,7 +2,7 @@
 
 extern pthread_mutex_t g_print_lock;
 
-bool scan_null( t_scan_port *port, t_host *host, const uint8_t th_id )
+bool scan_null( t_scan_port *port, t_host host, const uint8_t th_id )
 {
 	(void)port;
 	(void)host;

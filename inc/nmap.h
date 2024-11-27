@@ -42,7 +42,7 @@ typedef struct s_info
 	char	**hostnames;
 	int nb_thread;
 	int scan_type;
-	int	nb_host_ping;
+	 int	nb_host_ping;
 	int	nb_host_ping_success;
 	uint16_t	first_port;
 	uint16_t	port_range;

@@ -99,6 +99,14 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 			close_threads(threads, tab_th_info, i - 1);
 			fatal_perror("ft_nmap: socket");
 		}
+		struct timeval timeout;
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+		if (setsockopt(tab_th_info[i].sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
+		{
+			perror("Error");
+		}
+
 
 		if (pthread_mutex_init(&(tab_th_info[i].lock), NULL) != 0)
 		{
@@ -159,6 +167,8 @@ void threading_scan_port(t_info *info, t_host *current_host)
 	alloc_values(&tab_th_info, &threads, info);
 
 	init_threads(threads, tab_th_info, info);
+
+	printf("thread(main): s_addr = %d\n", current_host->ping_addr.sin_addr.s_addr);
 
 	while (current_host != NULL)
 	{

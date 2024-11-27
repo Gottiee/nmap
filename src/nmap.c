@@ -18,7 +18,7 @@ void	init_values( t_info *info )
 
 void ping_and_scan(t_info *info)
 {
-    t_host *start_host = NULL;
+	t_host *start_host = NULL;
 	t_host *current_host = NULL;
 
 	for (int i = 0; info->hostnames[i]; i++)
@@ -36,6 +36,7 @@ void ping_and_scan(t_info *info)
 		if (!start_host)
 		{
 			start_host = init_host_list(info->hostnames[i], info);
+			memcpy(&start_host->ping_addr, &info->ping_addr, sizeof(struct sockaddr_in));
 			info->start_host = start_host;
 			current_host = start_host;
 		}

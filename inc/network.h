@@ -55,12 +55,12 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host);
 
 void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id);
 bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id );
-bool scan_ack( t_scan_port *port, t_host *host, const uint8_t th_id );
-bool scan_fin( t_scan_port *port, t_host *host, const uint8_t th_id );
-bool scan_null( t_scan_port *port, t_host *host, const uint8_t th_id );
-bool scan_syn( t_scan_port *port, t_host *host, const uint8_t th_id );
-bool scan_xmas( t_scan_port *port, t_host *host, const uint8_t th_id );
-bool scan_udp( t_scan_port *port, t_host *host, const uint8_t th_id );
+bool scan_ack( t_scan_port *port, t_host host, const uint8_t th_id );
+bool scan_fin( t_scan_port *port, t_host host, const uint8_t th_id );
+bool scan_null( t_scan_port *port, t_host host, const uint8_t th_id );
+bool scan_syn( t_scan_port *port, t_host host, const uint8_t th_id );
+bool scan_xmas( t_scan_port *port, t_host host, const uint8_t th_id );
+bool scan_udp( t_scan_port *port, t_host host, const uint8_t th_id );
 void setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler(char *device);
 pcap_if_t *init_device();
