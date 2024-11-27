@@ -89,24 +89,23 @@ bool scan_syn( t_scan_port *port, t_host *host, const uint8_t th_id )
 	(void)port;
 	(void)host;
 	(void)th_id;
-	// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb = %d | ping_addr == %s\n", th_id, port->nb, inet_ntoa(port->ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
-	// printf("(%d) >>> scan_syn(): port_nb = %d | ping_addr == %s, \n", 
-	// 			port_info->th_id, port_info->nb, inet_ntoa(port_info->ping_addr.sin_addr));
-	// char	r_buf[IP_MAXPACKET] = {0};
+	pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb = %d | ping_addr == %s\n", 
+					th_id, port->nb, inet_ntoa(host->ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
+	char	r_buf[IP_MAXPACKET] = {0};
 
-	// init_ip_h(port_info->tcp_h, &(port_info->nb));
-	// port_info->tcp_h->check = checksum(port_info->tcp_h, sizeof(struct tcphdr));
+	init_ip_h(port->tcp_h, &(port->nb));
+	port->tcp_h->check = checksum(port_info->tcp_h, sizeof(struct tcphdr));
 	
-	// if (sendto(port_info->sockfd, port_info->tcp_h, sizeof(struct tcphdr), 0, (struct sockaddr *)&(port_info->ping_addr),sizeof(struct sockaddr)) == -1)
-	// 	return (return_error("ft_nmap: syn: send_syn(): sendto()"));
-	// pthread_mutex_lock(&g_print_lock);printf("(%d) > sendto(): OK\n", port_info->th_id);pthread_mutex_unlock(&g_print_lock);
+	if (sendto(port_info->sockfd, port_info->tcp_h, sizeof(struct tcphdr), 0, (struct sockaddr *)&(port_info->ping_addr),sizeof(struct sockaddr)) == -1)
+		return (return_error("ft_nmap: syn: send_syn(): sendto()"));
+	pthread_mutex_lock(&g_print_lock);printf("(%d) > sendto(): OK\n", port_info->th_id);pthread_mutex_unlock(&g_print_lock);
 
-	// bzero(r_buf, IP_MAXPACKET);
-	// if (recvfrom(port_info->sockfd, r_buf, 1024, 0 , NULL, NULL) == -1)
-	// 	return (return_error("ft_nmap: syn: send_syn(): recvfrom()"));	
-	// pthread_mutex_lock(&g_print_lock);printf("(%d) > recvfrom(): OK\n", port_info->th_id);pthread_mutex_unlock(&g_print_lock);
+	bzero(r_buf, IP_MAXPACKET);
+	if (recvfrom(port_info->sockfd, r_buf, 1024, 0 , NULL, NULL) == -1)
+		return (return_error("ft_nmap: syn: send_syn(): recvfrom()"));	
+	pthread_mutex_lock(&g_print_lock);printf("(%d) > recvfrom(): OK\n", port_info->th_id);pthread_mutex_unlock(&g_print_lock);
 
-	// handle_return_packet(r_buf, port_info);
+	handle_return_packet(r_buf, port_info);
 
 	return (0);
 }

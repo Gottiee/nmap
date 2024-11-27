@@ -19,8 +19,7 @@ typedef struct s_scan_port
 	uint16_t nb;
 	char *service;
 	int state; // open / filtered...
-
- #define port_nb 
+	int	sockfd;
 
 	bool done;
 } t_scan_port;
@@ -44,9 +43,10 @@ typedef struct	s_thread_arg
 	bool	is_free;
 
 	//	SCAN
-	uint16_t	index_port;
-	t_host *host;
 	uint8_t	scan_type;	
+	uint16_t	index_port;
+	int	sockfd;
+	t_host *host;
 }				t_thread_arg;
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);

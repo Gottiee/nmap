@@ -131,6 +131,14 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
 	handle = init_handler(alldvsp->name);
 
+	int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+	if (sockfd == -1)
+	{
+		pcap_freealldevs(alldvsp);
+		pcap_close(handle);
+		fatal_perror("ft_nmap: socket");
+	}
+
 	for (; port < last_port; port++)
 	{
 		host->port_tab[port - info->first_port].nb = port;
