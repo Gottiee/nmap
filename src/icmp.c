@@ -18,7 +18,7 @@ unsigned short checksum(void *b, int len)
 
 int socket_creation()
 {
-    int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+	int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (sockfd == -1)
         return -1;
     return sockfd;
