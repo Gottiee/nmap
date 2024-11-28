@@ -39,7 +39,9 @@ typedef struct s_info t_info;
 
 typedef struct s_info
 {
-	char	**hostnames;
+	char *device;
+	char **hostnames;
+	uint32_t ip_src;
 	int nb_thread;
 	int scan_type;
 	int	nb_host_ping;

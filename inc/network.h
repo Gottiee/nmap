@@ -30,6 +30,7 @@ typedef struct s_host
 	t_scan_port *port_tab;
 	struct s_host *next;
 	struct sockaddr_in	ping_addr;
+	int ip_src;
 } t_host;
 
 typedef struct	s_thread_arg
@@ -51,7 +52,7 @@ typedef struct	s_thread_arg
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host);
+void scan(t_info *info, t_host *current_host);
 
 void scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id);
 bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id );
@@ -63,6 +64,6 @@ bool scan_xmas( t_scan_port *port, t_host host, const uint8_t th_id );
 bool scan_udp( t_scan_port *port, t_host host, const uint8_t th_id );
 void setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler(char *device);
-pcap_if_t *init_device();
+pcap_if_t *init_device(t_info *info);
 
 #endif

@@ -30,14 +30,29 @@ pcap_t *init_handler(char *device)
 	return handle;
 }
 
-pcap_if_t *init_device()
+pcap_if_t *init_device(t_info *info)
 {
 	char error_buffer[PCAP_ERRBUF_SIZE];
 	pcap_if_t *alldvsp = NULL;
+	pcap_addr_t *dev_addr;
 
-	/* Find a device */
-	if (pcap_findalldevs(&alldvsp, error_buffer))
-		fatal_error_str("%s\n", error_buffer);
+	if (pcap_findalldevs(&alldvsp, error_buffer) == -1)
+	{
+		pcap_freealldevs(alldvsp);
+		fatal_error_str("Nmap: pcap find device: %s\n", error_buffer);
+	}
+	if (!alldvsp)
+		fatal_error("Nmap: no interface found\n");
+	info->device = alldvsp->name;
+	for (dev_addr = alldvsp->addresses; dev_addr != NULL; dev_addr = dev_addr->next) {
+		if (dev_addr->addr && dev_addr->netmask &&
+			dev_addr->addr->sa_family == AF_INET) {
+			struct sockaddr_in *addr = (struct sockaddr_in *)dev_addr->addr;
+			printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
+			info->ip_src = addr->sin_addr.s_addr;
+			break;
+		}
+	}
 	return alldvsp;
 }
 
@@ -116,20 +131,15 @@ bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id )
 	return (0); 
 }
 
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
+void scan(t_info *info, t_host *host)
 {
-	(void)ping_addr;
-	(void)host;
-	(void)info;
 	pcap_if_t *alldvsp = NULL;
 	pcap_t *handle = NULL;
 	uint16_t	port = info->first_port;
 	uint16_t	last_port = info->first_port + info->port_range;
 
-	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
-	alldvsp = init_device();
-	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
-	handle = init_handler(alldvsp->name);
+	alldvsp = init_device(info);
+	handle = init_handler(info->device);
 
 	int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	if (sockfd == -1)
@@ -138,10 +148,11 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 		pcap_close(handle);
 		fatal_perror("ft_nmap: socket");
 	}
-
+	host->ip_src = info->ip_src;
 	for (; port < last_port; port++)
 	{
 		host->port_tab[port - info->first_port].nb = port;
+		host->port_tab[port - info->first_port].sockfd = sockfd;
 		scan_switch(&host->port_tab[port - info->first_port], host, info->scan_type, NO_THREAD);
 	}
 

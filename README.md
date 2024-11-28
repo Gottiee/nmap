@@ -95,3 +95,5 @@ char *return_string()
 ## TODO
 
 - [ ] free les malloc / la list chainee dans le fatalerror/ perror
+- [ ] appeller init_device() dans les threads
+- [ ] probleme de read sur le print ?

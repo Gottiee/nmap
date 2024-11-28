@@ -10,42 +10,40 @@ void	init_values( t_info *info )
 
 	info->first_port = 1;
 	info->port_range = 1024;
-	// for (uint16_t i = 0; i < 1024; i++)
-	// {
-	// 	info->port_info->to_scan[i] = i + 1;
-	// }
 }
 
 void ping_and_scan(t_info *info)
 {
     t_host *start_host = NULL;
-	t_host *current_host = NULL;
+    t_host *current_host = NULL;
 
-	for (int i = 0; info->hostnames[i]; i++)
-	{
-		if (!fill_sockaddr_in(info->hostnames[i], &info->ping_addr))
-		{
-			fprintf(stderr, "Failed to resolve \"%s\".\n", info->hostnames[i]);
-			continue;
-		}
-		info->nb_host_ping ++;
-		if (!ping_ip(&info->ping_addr))
-			continue;
-		info->nb_host_ping_success ++;
-		
-		if (!start_host)
-		{
-			start_host = init_host_list(info->hostnames[i], info);
-			info->start_host = start_host;
-			current_host = start_host;
-		}
-		else
-			current_host = add_host_list(info->hostnames[i], start_host, info);
-		if (info->nb_thread == 0)
-			scan(&info->ping_addr, info, current_host);
-	}
-	if (info->nb_thread > 0)
-		threading_scan_port(info, start_host);
+    for (int i = 0; info->hostnames[i]; i++)
+    {
+        if (!fill_sockaddr_in(info->hostnames[i], &info->ping_addr))
+        {
+            fprintf(stderr, "Failed to resolve \"%s\".\n", info->hostnames[i]);
+            continue;
+        }
+        info->nb_host_ping ++;
+        if (!ping_ip(&info->ping_addr))
+            continue;
+        info->nb_host_ping_success ++;
+        
+        printf("hostname[%d]: [%s]\n", i, info->hostnames[i]);
+        if (!start_host)
+        {
+            start_host = init_host_list(info->hostnames[i], info);
+            memcpy(&start_host->ping_addr, &info->ping_addr, sizeof(struct sockaddr_in));
+            info->start_host = start_host;
+            current_host = start_host;
+        }
+        else
+            current_host = add_host_list(info->hostnames[i], start_host, info);
+        if (info->nb_thread == 0)
+            scan(info, current_host);
+    }
+    if (info->nb_thread > 0)
+        threading_scan_port(info, start_host);
 
 }
 
