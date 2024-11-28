@@ -48,7 +48,7 @@ pcap_if_t *init_device(t_info *info)
 		if (dev_addr->addr && dev_addr->netmask &&
 			dev_addr->addr->sa_family == AF_INET) {
 			struct sockaddr_in *addr = (struct sockaddr_in *)dev_addr->addr;
-			printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
+			// printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
 			info->ip_src = addr->sin_addr.s_addr;
 			break;
 		}
@@ -88,7 +88,6 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 
 void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id)
 {
-	printf("scan_switch: addr = %d\n", host->ping_addr.sin_addr.s_addr);
 	switch (scan_type)
 	{
 		case ALL:

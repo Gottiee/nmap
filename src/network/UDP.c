@@ -52,5 +52,6 @@ bool scan_udp( t_scan_port *port, t_host host, const uint8_t th_id )
 	}
 	else
 		printf(" >> Udp packet sent\n");
+	port->state = OPEN;
 	return true;
 }
