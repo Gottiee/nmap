@@ -88,6 +88,7 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 
 void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id)
 {
+	printf("scan_switch: addr = %d\n", host->ping_addr.sin_addr.s_addr);
 	switch (scan_type)
 	{
 		case ALL:
