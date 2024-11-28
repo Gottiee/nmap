@@ -43,11 +43,12 @@ pcap_if_t *init_device()
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 {
+	(void)input_domain;
 	struct addrinfo hints, *res;
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	if ((getaddrinfo(input_domain, NULL, &hints, &res)) != 0)
+	if ((getaddrinfo("172.217.20.174", NULL, &hints, &res)) != 0)
 		return (0);
 	ping_addr->sin_family = AF_INET;
 	ping_addr->sin_port = htons(0);

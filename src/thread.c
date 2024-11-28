@@ -92,7 +92,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 		tab_th_info[i].index_port = 0;
 		tab_th_info[i].data_ready = 0;
 		tab_th_info[i].scan_type = info->scan_type;
-		tab_th_info[i].sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+		tab_th_info[i].sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 		if (tab_th_info[i].sockfd == -1)
 		{
 			send_end_signal(tab_th_info, i - 1);

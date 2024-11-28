@@ -23,19 +23,19 @@ extern pthread_mutex_t	g_print_lock;
 	
 // }
 
-// void	print_packet( const uint8_t th_id, struct tcphdr *r_tcp, const char *r_dest_addr, const char *r_src_addr )
-// {
-// 	pthread_mutex_lock(&g_print_lock);
-// 	printf("(%d)---------------------------------\n", th_id);
-// 	printf("saddr == %s \ndaddr == %s\nseq == %u\nack_seq == %u\n",
-// 			r_src_addr, r_dest_addr, ntohl(r_tcp->seq), ntohl(r_tcp->ack_seq));
-// 	printf("source == %hu\ndest == %hu\nr_tcp->syn = %hu\nack = %hu\npsh = %hu\n",
-// 			ntohs(r_tcp->source), ntohs(r_tcp->dest), ntohs(r_tcp->syn), r_tcp->ack, r_tcp->psh);
-// 	printf("r_tcp->src_addr = %hu\n",
-// 			ntohs(r_tcp->dest));
-// 	printf("\n");
-// 	pthread_mutex_unlock(&g_print_lock);
-// }
+void	print_packet( const uint8_t th_id, struct tcphdr *r_tcp, const char *r_dest_addr, const char *r_src_addr )
+{
+	pthread_mutex_lock(&g_print_lock);
+	printf("(%d)---------------------------------\n", th_id);
+	printf("saddr == %s \ndaddr == %s\nseq == %u\nack_seq == %u\n",
+			r_src_addr, r_dest_addr, ntohl(r_tcp->seq), ntohl(r_tcp->ack_seq));
+	printf("source == %hu\ndest == %hu\nr_tcp->syn = %hu\nack = %hu\npsh = %hu\n",
+			ntohs(r_tcp->source), ntohs(r_tcp->dest), ntohs(r_tcp->syn), r_tcp->ack, r_tcp->psh);
+	printf("r_tcp->src_addr = %hu\n",
+			ntohs(r_tcp->dest));
+	printf("\n");
+	pthread_mutex_unlock(&g_print_lock);
+}
 
 // bool	check_packet( const struct tcphdr *s_tcp, const struct tcphdr *r_tcp, const uint16_t th_id )
 // {
@@ -56,11 +56,31 @@ bool	handle_return_packet( char *r_buf, t_scan_port *port, const uint8_t th_id )
 {
 	struct iphdr	*r_ip = (struct iphdr *)r_buf;
 	struct tcphdr	*r_tcp = (struct tcphdr *)(r_buf + (r_ip->ihl * 4));
+	struct icmphdr	*r_icmp = (struct icmphdr *)(r_buf + (r_ip->ihl * 4));
+	struct in_addr	s_addr;
+	s_addr.s_addr = r_ip->saddr;
 	(void) r_ip; (void) r_tcp; (void) port;
-
-	if (r_tcp->syn && r_tcp->ack)
+	if (r_ip->protocol == IPPROTO_ICMP)
 	{
-		pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv SYN/ACK\n", th_id);pthread_mutex_unlock(&g_print_lock);
+		//	ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13)
+		if (r_icmp->type == 3)
+		{
+			if (r_icmp->code == 1 || r_icmp->code == 2 || r_icmp->code == 3 
+				|| r_icmp->code == 9 || r_icmp->code == 10 || r_icmp->code == 13)
+			{
+				//	STATE = FILTERED
+				pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: handle return: icmp code %d type %d received\n", th_id, r_icmp->type, r_icmp->code);pthread_mutex_unlock(&g_print_lock);
+			}
+		}
+		else
+		{
+			pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: handle return: icmp type %d received => error\n", th_id, r_icmp->type);pthread_mutex_unlock(&g_print_lock);
+			return (1);
+		}
+	}
+	else if (r_tcp->syn && r_tcp->ack)
+	{
+		pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv SYN/ACK(%s)\n", th_id, inet_ntoa(s_addr));pthread_mutex_unlock(&g_print_lock);
 		//	STATE = OPEN
 	}
 	else if (r_tcp->rst)
@@ -82,7 +102,6 @@ void	init_ip_h( struct iphdr *ip_h, const uint32_t dest_addr )
 	ip_h->frag_off = 0;
 	ip_h->ttl = IPDEFTTL;
 	ip_h->protocol = IPPROTO_TCP;
-	ip_h->check = 0;		//	A DEFINIR AVEC CHECKSUM()
 	ip_h->saddr = inet_addr("10.0.2.15");
 	ip_h->daddr = htonl(dest_addr);
 	ip_h->check = checksum(&ip_h, sizeof(struct tcphdr));
@@ -125,6 +144,7 @@ bool scan_syn( t_scan_port *port, t_host host, const uint8_t th_id )
 	
 	for (; retry < 2; retry++)
 	{
+		pthread_mutex_lock(&g_print_lock);printf("(%d) Addr == %s\n", th_id, inet_ntoa(host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
 		if (sendto(port->sockfd, &ip_h, sizeof(struct tcphdr), 0, (struct sockaddr *)&(host.ping_addr),sizeof(struct sockaddr)) == -1)
 			return (return_error("ft_nmap: syn: send_syn(): sendto()"));
 		pthread_mutex_lock(&g_print_lock);printf("(%d) > sendto(): OK\n", th_id);pthread_mutex_unlock(&g_print_lock);
@@ -132,18 +152,26 @@ bool scan_syn( t_scan_port *port, t_host host, const uint8_t th_id )
 		bzero(r_buf, IP_MAXPACKET);
 		if (recvfrom(port->sockfd, r_buf, 1024, 0 , NULL, NULL) == -1)
 		{
-			if (errno == ETIMEDOUT)
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
 			{
-			pthread_mutex_lock(&g_print_lock);printf("(%d) > recvfrom(): Timeout\n", th_id);pthread_mutex_unlock(&g_print_lock);
-				
+				pthread_mutex_lock(&g_print_lock);printf("(%d) > recvfrom(): Timeout\n", th_id);pthread_mutex_unlock(&g_print_lock);
+				if (retry == 1)
+				{
+					//	NO REPONSE => STATE = FILTERED;
+					pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: no response\n", th_id);pthread_mutex_unlock(&g_print_lock);
+				}
 				continue ;
 			}
 			else
+			{
+				pthread_mutex_lock(&g_print_lock);printf("(%d) errno == %d | ETIMEDOUT == %d\n", th_id, errno, ETIMEDOUT);pthread_mutex_unlock(&g_print_lock);
 				return (return_error("ft_nmap: syn: send_syn(): recvfrom()"));	
+			}
 		}
 		else
 		{
 			pthread_mutex_lock(&g_print_lock);printf("(%d) > recvfrom(): OK\n", th_id);pthread_mutex_unlock(&g_print_lock);
+			handle_return_packet(r_buf, port, th_id);
 			break ;
 		}
 	}
