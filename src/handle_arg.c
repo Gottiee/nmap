@@ -114,7 +114,7 @@ bool	define_ports( unsigned short (*port_range)[2], char *argv )
 	argv = sep + 1;
 	if (get_port_number(port_range, argv, 0) == 1)
 		return (1);
-	if ((*port_range)[1] - (*port_range)[0] + 1 > 1024 || (*port_range)[0] >= (*port_range)[1])
+	if ((*port_range)[1] - (*port_range)[0] + 1 > 1024 || (*port_range)[0] > (*port_range)[1])
 		return (return_error("Format error: port: port range must be between 1 and 1024 written in ascending order"));
 	return (0);
 }

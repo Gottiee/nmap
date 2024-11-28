@@ -1,5 +1,7 @@
 #include "../inc/nmap.h"
 
+t_info *g_info;
+
 void	init_values( t_info *info )
 {
 	info->hostnames = NULL;
@@ -50,7 +52,8 @@ void ping_and_scan(t_info *info)
 int main( int argc, char **argv )
 {
     t_info info;
-
+    g_info = &info;
+	signal(SIGALRM, alarm_handler);
     gettimeofday(&info.time_start, NULL);
 
 	init_values(&info);

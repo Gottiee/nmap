@@ -1,11 +1,5 @@
 #include "../../inc/nmap.h"
 
-// pour ecouter on doit creer un pcap_t *handle sur le quel on met les filtres et qui est utilisé pour recevoir les paquets
-// le probleme c'est qu'on peut pas en créer qu'un parce qu'avec les threads ca va datarace i guess
-
-// essayer de faire plusieurs thread qui utilise le handler, y'a moyen que ca fonctinne avec les versions plus a jour.
-
-// envoie d'un paquet -> reception du paquet (mise en place du truc + les filtres) -> analyse de la reponse
 
 void setup_filter(char *filter_str, pcap_t *handle)
 {
@@ -21,7 +15,7 @@ pcap_t *init_handler(char *device)
 {
 	pcap_t *handle;
 	int packet_count_limit = 1;
-	int timeout_limit = 10000; /* In milliseconds */
+	int timeout_limit = 1000; /* In milliseconds */
 	char error_buffer[PCAP_ERRBUF_SIZE];
 
 	handle = pcap_open_live(device, BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
@@ -49,7 +43,7 @@ pcap_if_t *init_device(t_info *info)
 			dev_addr->addr->sa_family == AF_INET) {
 			struct sockaddr_in *addr = (struct sockaddr_in *)dev_addr->addr;
 			// printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
-			info->ip_src = addr->sin_addr.s_addr;
+			info->ip_src = addr->sin_addr;
 			break;
 		}
 	}
@@ -86,7 +80,7 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id)
+void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const int16_t th_id)
 {
 	switch (scan_type)
 	{
@@ -116,7 +110,7 @@ void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, cons
 	}
 }
 
-bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id )
+bool scan_all( t_scan_port *port, t_host *host, const int16_t th_id )
 {
 	(void)host;
 	(void) th_id;
@@ -138,6 +132,8 @@ void scan(t_info *info, t_host *host)
 	uint16_t	port = info->first_port;
 	uint16_t	last_port = info->first_port + info->port_range;
 
+	g_handle = malloc(sizeof(pcap_t *));
+	g_main_tid = syscall(SYS_gettid);
 	alldvsp = init_device(info);
 	handle = init_handler(info->device);
 
@@ -148,6 +144,7 @@ void scan(t_info *info, t_host *host)
 		pcap_close(handle);
 		fatal_perror("ft_nmap: socket");
 	}
+	host->handle = handle;
 	host->ip_src = info->ip_src;
 	for (; port < last_port; port++)
 	{
@@ -155,7 +152,7 @@ void scan(t_info *info, t_host *host)
 		host->port_tab[port - info->first_port].sockfd = sockfd;
 		scan_switch(&host->port_tab[port - info->first_port], host, info->scan_type, NO_THREAD);
 	}
-
+	free(g_handle);
 	pcap_freealldevs(alldvsp);
 	pcap_close(handle);
 }

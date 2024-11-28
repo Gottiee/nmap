@@ -23,7 +23,7 @@ extern pthread_mutex_t	g_print_lock;
 	
 // }
 
-// void	print_packet( const uint8_t th_id, struct tcphdr *r_tcp, const char *r_dest_addr, const char *r_src_addr )
+// void	print_packet( const int16_t th_id, struct tcphdr *r_tcp, const char *r_dest_addr, const char *r_src_addr )
 // {
 // 	pthread_mutex_lock(&g_print_lock);
 // 	printf("(%d)---------------------------------\n", th_id);
@@ -52,7 +52,7 @@ extern pthread_mutex_t	g_print_lock;
 // 	return (0);
 // }
 
-bool	handle_return_packet( char *r_buf, t_scan_port *port, const uint8_t th_id )
+bool	handle_return_packet( char *r_buf, t_scan_port *port, const int16_t th_id )
 {
 	struct iphdr	*r_ip = (struct iphdr *)r_buf;
 	struct tcphdr	*r_tcp = (struct tcphdr *)(r_buf + (r_ip->ihl * 4));
@@ -104,7 +104,7 @@ void	init_tcp_h( struct tcphdr *tcp_h, const t_scan_port *port )
 	tcp_h->check = checksum(&tcp_h, sizeof(struct tcphdr));
 }
 
-bool scan_syn( t_scan_port *port, t_host host, const uint8_t th_id )
+bool scan_syn( t_scan_port *port, t_host host, const int16_t th_id )
 {
 	pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb = %d | ping_addr == %s\n", th_id, port->nb, inet_ntoa(host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
 	uint8_t	retry = 0;

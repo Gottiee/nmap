@@ -10,10 +10,12 @@ typedef struct s_info t_info;
 #include <unistd.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <signal.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
 #include <sys/time.h>
+#include <sys/syscall.h>
 
 typedef struct s_info t_info;
 
@@ -25,6 +27,10 @@ typedef struct s_info t_info;
 #include "file.h"
 #include "utils.h"
 
+
+extern pcap_t **g_handle;
+extern long int g_main_tid;
+extern t_info *g_info;
 
 //	SCAN VALUES
 #define ALL 0
@@ -41,7 +47,7 @@ typedef struct s_info
 {
 	char *device;
 	char **hostnames;
-	uint32_t ip_src;
+	struct in_addr ip_src;
 	int nb_thread;
 	int scan_type;
 	 int	nb_host_ping;
@@ -55,5 +61,8 @@ typedef struct s_info
 
 //	PRINT.C
 void	super_print( t_host *host, t_info *info );
+
+// Signal.c
+void alarm_handler(int sig);
 
 #endif

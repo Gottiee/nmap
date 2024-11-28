@@ -1,8 +1,8 @@
 #include "../inc/nmap.h"
 
+long int g_main_tid;
 pthread_mutex_t	g_print_lock;
 pthread_mutex_t	g_lock;
-// pthread_cond_t	g_cond;
 bool	g_done = 0;
 
 void	*scan_routine( void *arg );
@@ -33,7 +33,7 @@ void	alloc_values( t_thread_arg **tab_th_info, pthread_t ** threads, t_info *inf
 void	send_end_signal( t_thread_arg *tab_th_info, uint8_t nb_thread )
 {
 	//	FERMER LES THREADS
-	for (uint8_t th_id = 0; th_id < nb_thread; th_id++)
+	for (int16_t th_id = 0; th_id < nb_thread; th_id++)
 	{
 		if (pthread_mutex_lock(&(tab_th_info[th_id].lock)) == 0)
 		{
@@ -44,7 +44,7 @@ void	send_end_signal( t_thread_arg *tab_th_info, uint8_t nb_thread )
 	}
 }
 
-void	close_threads( pthread_t *threads, t_thread_arg *tab_th_info, const uint8_t nb_th )
+void	close_threads( pthread_t *threads, t_thread_arg *tab_th_info, const uint8_t nb_th, pcap_if_t *alldsvp)
 {
 	int	ret = 0;
 	for (int i = 0; i < nb_th; i++)
@@ -55,6 +55,7 @@ void	close_threads( pthread_t *threads, t_thread_arg *tab_th_info, const uint8_t
 		pthread_cond_destroy(&(tab_th_info[i].cond));
 		pthread_mutex_destroy(&(tab_th_info[i].lock));
 		close(tab_th_info[i].sockfd);
+		pcap_close(tab_th_info[i].host->handle);
 	}
 	if (threads)
 		free(threads);
@@ -63,10 +64,12 @@ void	close_threads( pthread_t *threads, t_thread_arg *tab_th_info, const uint8_t
 	
 	pthread_mutex_destroy(&g_lock);
 	pthread_mutex_destroy(&g_print_lock);
+	pcap_freealldevs(alldsvp);
 }
 
-void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
+void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, pcap_if_t *alldvsp)
 {
+
 	if (pthread_mutex_init(&g_print_lock, NULL) != 0)
 	{
 		free(threads);
@@ -83,11 +86,13 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 
 	g_done = 0;
 
+	alldvsp = init_device(info);
+
 	for (int16_t i = 0; i < info->nb_thread; i++)
 	{
-		// memcpy(&(tab_th_info[i].port.ping_addr), &(info->ping_addr), sizeof(struct sockaddr_in));
-
-
+		pcap_t *handle = NULL;
+		handle = init_handler(info->device);
+		tab_th_info[i].handle = handle;
 		tab_th_info[i].id = i;
 		tab_th_info[i].index_port = 0;
 		tab_th_info[i].data_ready = 0;
@@ -96,7 +101,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 		if (tab_th_info[i].sockfd == -1)
 		{
 			send_end_signal(tab_th_info, i - 1);
-			close_threads(threads, tab_th_info, i - 1);
+			close_threads(threads, tab_th_info, i - 1, alldvsp);
 			fatal_perror("ft_nmap: socket");
 		}
 		struct timeval timeout;
@@ -112,7 +117,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 		{
 			close(tab_th_info[i].sockfd);
 			send_end_signal(tab_th_info, i - 1);
-			close_threads(threads, tab_th_info, i - 1);
+			close_threads(threads, tab_th_info, i - 1, alldvsp);
 			fatal_perror("ft_nmap: init_threads: mutex init");
 		}
 		if (pthread_cond_init(&(tab_th_info[i].cond), NULL) != 0)
@@ -120,7 +125,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 			close(tab_th_info[i].sockfd);
 			pthread_mutex_destroy(&(tab_th_info[i].lock));
 			send_end_signal(tab_th_info, i - 1);
-			close_threads(threads, tab_th_info, i - 1);
+			close_threads(threads, tab_th_info, i - 1, alldvsp);
 			fatal_perror("ft_nmap: init_threads: mutex init");
 		}
 		if (pthread_create(&(threads[i]), NULL, &scan_routine, &(tab_th_info[i])) != 0)
@@ -129,7 +134,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 			pthread_cond_destroy(&(tab_th_info[i].cond));
 			pthread_mutex_destroy(&(tab_th_info[i].lock));
 			send_end_signal(tab_th_info, i - 1);
-			close_threads(threads, tab_th_info, i - 1);
+			close_threads(threads, tab_th_info, i - 1, alldvsp);
 			fatal_perror("ft_nmap: init_threads: thread_create");
 		}
 		usleep(20);
@@ -160,21 +165,23 @@ void	*scan_routine( void *arg )
 
 void threading_scan_port(t_info *info, t_host *current_host)
 {
+	pcap_if_t *alldvsp = NULL;
 	int last_port = info->first_port + info->port_range;
 	int	port = info->first_port;
 	t_thread_arg	*tab_th_info = NULL;
 	pthread_t		*threads = NULL;
 	alloc_values(&tab_th_info, &threads, info);
+	g_main_tid = syscall(SYS_gettid);
+	g_handle = malloc(sizeof(pcap_t *) * info->nb_thread);
 
-	init_threads(threads, tab_th_info, info);
-
-	printf("thread(main): s_addr = %d\n", current_host->ping_addr.sin_addr.s_addr);
+	init_threads(threads, tab_th_info, info, alldvsp);
+	// printf("thread(main): s_addr = %s\n", inet_ntoa(current_host->ping_addr.sin_addr));
 
 	while (current_host != NULL)
 	{
 		while (port < last_port)
 		{
-			for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)
+			for (int16_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)
 			{
 				if (pthread_mutex_trylock(&(tab_th_info[th_id].lock)) == 0)
 				{
@@ -184,7 +191,9 @@ void threading_scan_port(t_info *info, t_host *current_host)
 						continue ;
 					}
 					tab_th_info[th_id].host = current_host;
+					tab_th_info[th_id].host->ip_src = info->ip_src;
 					tab_th_info[th_id].host->port_tab[port - info->first_port].nb = port;
+					tab_th_info[th_id].host->port_tab[port - info->first_port].handle = tab_th_info[th_id].handle;
 					tab_th_info[th_id].index_port = port - info->first_port;
 					tab_th_info[th_id].data_ready = 1;
 					pthread_cond_signal(&tab_th_info[th_id].cond);
@@ -203,5 +212,5 @@ void threading_scan_port(t_info *info, t_host *current_host)
 	pthread_mutex_unlock(&g_lock);
 
 	send_end_signal(tab_th_info, info->nb_thread);
-	close_threads(threads, tab_th_info, info->nb_thread);
+	close_threads(threads, tab_th_info, info->nb_thread, alldvsp);
 }
