@@ -47,7 +47,7 @@ typedef struct	s_thread_arg
 
 	//	SCAN
 	uint8_t	scan_type;	
-	uint16_t	index_port;
+	uint16_t index_port;
 	int	sockfd;
 	t_host *host;
 	pcap_t *handle;

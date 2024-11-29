@@ -64,5 +64,6 @@ void	super_print( t_host *host, t_info *info );
 
 // Signal.c
 void alarm_handler(int sig);
+void timer_handler(int sig, siginfo_t *si, void *uc);
 
 #endif

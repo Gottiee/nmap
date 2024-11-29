@@ -1,11 +1,21 @@
 #include "../inc/nmap.h"
 
+pcap_t **g_handle;
 long int g_main_tid;
 pthread_mutex_t	g_print_lock;
 pthread_mutex_t	g_lock;
 bool	g_done = 0;
 
 void	*scan_routine( void *arg );
+
+pcap_t **get_handle()
+{
+	static pcap_t **static_handle = NULL;
+
+	if (!static_handle)
+		static_handle = malloc(sizeof(pcap_t *) * g_info->nb_thread);
+	return static_handle;
+}
 
 bool	check_g_done( void )
 {
@@ -55,7 +65,7 @@ void	close_threads( pthread_t *threads, t_thread_arg *tab_th_info, const uint8_t
 		pthread_cond_destroy(&(tab_th_info[i].cond));
 		pthread_mutex_destroy(&(tab_th_info[i].lock));
 		close(tab_th_info[i].sockfd);
-		pcap_close(tab_th_info[i].host->handle);
+		pcap_close(tab_th_info[i].handle);
 	}
 	if (threads)
 		free(threads);
@@ -88,11 +98,16 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 
 	alldvsp = init_device(info);
 
+	pcap_t **static_handle = get_handle();
+
 	for (int16_t i = 0; i < info->nb_thread; i++)
 	{
 		pcap_t *handle = NULL;
 		handle = init_handler(info->device);
 		tab_th_info[i].handle = handle;
+		printf("static_handle[%d] = %p\n", i, handle);
+		
+		static_handle[i] = handle;
 		tab_th_info[i].id = i;
 		tab_th_info[i].index_port = 0;
 		tab_th_info[i].data_ready = 0;
@@ -145,6 +160,20 @@ void	*scan_routine( void *arg )
 {
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
 
+	// sigset_t signal_set;
+    // sigemptyset(&signal_set);
+    // sigaddset(&signal_set, SIGALRM);
+    // pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
+
+	struct sigaction sa;
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = timer_handler;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
+        perror("sigaction");
+        return NULL;
+    }
+
 	pthread_mutex_lock(&(th_info->lock));
 	while (check_g_done() == 0)
 	{
@@ -172,7 +201,13 @@ void threading_scan_port(t_info *info, t_host *current_host)
 	pthread_t		*threads = NULL;
 	alloc_values(&tab_th_info, &threads, info);
 	g_main_tid = syscall(SYS_gettid);
-	g_handle = malloc(sizeof(pcap_t *) * info->nb_thread);
+	// g_handle = malloc(sizeof(pcap_t *) * info->nb_thread);
+
+	// sigset_t signal_set;
+    // sigemptyset(&signal_set);
+    // sigaddset(&signal_set, SIGALRM);
+    // pthread_sigmask(SIG_BLOCK, &signal_set, NULL);
+
 
 	init_threads(threads, tab_th_info, info, alldvsp);
 	// printf("thread(main): s_addr = %s\n", inet_ntoa(current_host->ping_addr.sin_addr));
