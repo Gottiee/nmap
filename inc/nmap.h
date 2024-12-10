@@ -24,7 +24,7 @@ typedef struct s_info t_info;
 #include "error.h"
 #include "file.h"
 #include "utils.h"
-
+#include "colors.h"
 
 //	SCAN VALUES
 #define ALL 0
@@ -36,16 +36,18 @@ typedef struct s_info t_info;
 #define UDP 6
 
 #define MAX_SCAN 65535
+#define IPADDR_STRLEN 15
+#define MAX_FILTER_LEN 43
 
 typedef struct s_info
 {
 	char	**hostnames;
-	int nb_thread;
-	int scan_type;
-	 int	nb_host_ping;
-	int	nb_host_ping_success;
 	uint16_t	first_port;
 	uint16_t	port_range;
+	int nb_thread;
+	int scan_type;
+	int	nb_host_ping;
+	int	nb_host_ping_success;
 	t_host *start_host;
 	struct timeval time_start;
 	struct sockaddr_in	ping_addr;

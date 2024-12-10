@@ -11,7 +11,10 @@ void setup_filter(char *filter_str, pcap_t *handle)
 {
 	struct bpf_program filter;
 	if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
+	{
+		printf("Bad filter: %s\n", filter_str);
 		fatal_error_str("Bad filter: %s\n", pcap_geterr(handle));
+	}
 	if (pcap_setfilter(handle, &filter) == -1)
 		fatal_error_str("Error setting filters: %s\n", pcap_geterr(handle));
 	pcap_freecode(&filter);
@@ -72,49 +75,47 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id)
+void	scan_switch( t_scan_port *port, const t_thread_arg *th_info)
 {
-	printf("scan_switch: addr = %d\n", host->ping_addr.sin_addr.s_addr);
-	switch (scan_type)
+	// printf("scan_switch: addr = %s\n", inet_ntoa(host->ping_addr.sin_addr));
+	switch (th_info->scan_type)
 	{
 		case ALL:
-			scan_all(port, host, th_id);
+			scan_all(port, th_info);
 			break ;
 		case SYN:
-			scan_syn(port, *host, th_id);
+			scan_syn(port, th_info);
 			break ;
 		case S_NULL:
-			scan_null(port, *host, th_id);
+			scan_null(port, th_info);
 			break ;
 		case ACK:
-			scan_ack(port, *host, th_id);
+			scan_ack(port, th_info);
 			break ;
 		case FIN:
-			scan_fin(port, *host, th_id);
+			scan_fin(port, th_info);
 			break ;
 		case XMAS:
-			scan_xmas(port, *host, th_id);
+			scan_xmas(port, th_info);
 			break ;
 		case UDP:
-			scan_udp(port, *host, th_id);
+			scan_udp(port, th_info);
 			break ;
 		default:
 			break ;
 	}
 }
 
-bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id )
+bool scan_all( t_scan_port *port, const t_thread_arg *th_info )
 {
-	(void)host;
-	(void) th_id;
 	// t_info	*info = NULL; //  A RETIRER !!!!
-	printf("(%d)scan ALL\n", th_id);
-	scan_syn(port, *host, th_id);
-	scan_null(port, *host, th_id);
-	scan_ack(port, *host, th_id);
-	scan_fin(port, *host, th_id);
-	scan_xmas(port, *host, th_id);
-	scan_udp(port, *host, th_id);
+	// printf("(%d)scan ALL\n", th_id);
+	scan_syn(port, th_info);
+	scan_null(port, th_info);
+	scan_ack(port, th_info);
+	scan_fin(port, th_info);
+	scan_xmas(port, th_info);
+	scan_udp(port, th_info);
 	return (0); 
 }
 
@@ -144,7 +145,7 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 	for (; port < last_port; port++)
 	{
 		host->port_tab[port - info->first_port].nb = port;
-		scan_switch(&host->port_tab[port - info->first_port], host, info->scan_type, NO_THREAD);
+		// scan_switch(&host->port_tab[port - info->first_port], th_info);
 	}
 
 	pcap_freealldevs(alldvsp);

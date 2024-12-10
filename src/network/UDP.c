@@ -2,11 +2,10 @@
 
 extern pthread_mutex_t	g_print_lock;
 
-bool scan_udp( t_scan_port *port, t_host host, const uint8_t th_id )
+bool scan_udp( t_scan_port *port,  const t_thread_arg *th_info )
 {
 	(void) port;
-	(void) th_id;
-	(void) host;
+	(void) th_info;
 	port->state = OPEN;
 	// printf("port %d state = open\n", port->nb);
 	// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_udp()\n", th_id);pthread_mutex_unlock(&g_print_lock);
