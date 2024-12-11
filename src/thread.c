@@ -152,9 +152,9 @@ void	*scan_routine( void *arg )
 		}
 		if (check_g_done() == 1 && th_info->data_ready == 0)
 			break ;
-pthread_mutex_lock(&g_print_lock);printf("(%d) socket: %d | Scanning %d ...\n", th_info->id, th_info->sockfd, th_info->host->port_tab[th_info->index_port].nb);pthread_mutex_unlock(&g_print_lock);
-		th_info->host->port_tab[th_info->index_port].sockfd = th_info->sockfd;
-		scan_switch(&th_info->host->port_tab[th_info->index_port], th_info);
+pthread_mutex_lock(&g_print_lock);printf("(%d) socket: %d | Scanning %d ...\n", th_info->id, th_info->sockfd, th_info->host.port_tab[th_info->index_port].nb);pthread_mutex_unlock(&g_print_lock);
+		th_info->host.port_tab[th_info->index_port].sockfd = th_info->sockfd;
+		scan_switch(&th_info->host.port_tab[th_info->index_port], th_info);
 	}
 	pthread_mutex_unlock(&(th_info->lock));
 	return (NULL);
@@ -190,8 +190,8 @@ void threading_scan_port(t_info *info, t_host *current_host)
 						continue ;
 					}
 // pthread_mutex_lock(&g_print_lock);printf("(main) Assigning to %d ...\n", th_id);pthread_mutex_unlock(&g_print_lock);			
-					tab_th_info[th_id].host = current_host;
-					tab_th_info[th_id].host->port_tab[port - info->first_port].nb = port;
+					memcpy(&(tab_th_info[th_id].host), current_host, sizeof(t_host));
+					tab_th_info[th_id].host.port_tab[port - info->first_port].nb = port;
 					tab_th_info[th_id].index_port = port - info->first_port;
 					tab_th_info[th_id].data_ready = 1;
 					bzero(str_filter, IPADDR_STRLEN);

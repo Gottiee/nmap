@@ -31,22 +31,18 @@ void	init_ip_h( struct iphdr *ip_h, const uint32_t dest_addr )
 	ip_h->check = checksum(&ip_h, sizeof(struct tcphdr));
 }
 
-void	init_tcp_h( struct tcphdr *tcp_h, const t_scan_port *port )
+void	init_tcp_h( struct tcphdr *tcp_h, const uint16_t port_nb )
 {
 	srand(time(NULL));
 
+	bzero(tcp_h, sizeof(struct tcphdr));
 	tcp_h->source = htons(7777);
-	tcp_h->dest = port->nb;
-	tcp_h->seq = rand();
-	tcp_h->ack_seq = 0;
+	tcp_h->dest = port_nb;
+	tcp_h->seq = rand() % 65535;
 	tcp_h->syn = 1;
-	tcp_h->res1 = 0;
-	tcp_h->res2 = 0;
 	tcp_h->window = htons(1024);
-	tcp_h->urg_ptr = 0;
 	tcp_h->check = checksum(&tcp_h, sizeof(struct tcphdr));
 }
-
 
 bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id )
 {
@@ -134,16 +130,15 @@ void	tests_r_packet( const char r_buf[IP_MAXPACKET], const uint8_t th_id )
 
 bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 {
-	pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb = %d | ping_addr == %s\n", th_info->id, port->nb, inet_ntoa(th_info->host->ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
+	pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb = %d | ping_addr == %s\n", th_info->id, port->nb, inet_ntoa(th_info->host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
 	uint8_t	retry = 0;
 	// char	s_buf[IP_MAXPACKET] = {0};
-	u_char	*r_buf = {0};
+	u_char	*r_buf = NULL;
 	// struct iphdr	ip_h;
 	struct pcap_pkthdr	pkt_h;
 	bzero(&pkt_h, sizeof(struct pcap_pkthdr));
 	struct tcphdr	tcp_h;
-	bzero(&tcp_h, sizeof(struct tcphdr));
-	init_tcp_h(&tcp_h, port);
+	init_tcp_h(&tcp_h, port->nb);
 
 	// init_ip_h(&ip_h, host.ping_addr.sin_addr.s_addr);
 	// memcpy(s_buf, &ip_h, sizeof(struct iphdr));
@@ -155,12 +150,18 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 	
 	for (; retry < 2; retry++)
 	{
-		// pthread_mutex_lock(&g_print_lock);printf("(%d) sendto(%s)\n", th_info->id, inet_ntoa(host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
-		if (sendto(port->sockfd, &tcp_h, sizeof(struct tcphdr), 0, (struct sockaddr *)&(th_info->host->ping_addr), sizeof(struct sockaddr)) == -1)
+		pthread_mutex_lock(&g_print_lock);
+		printf("(%d) sendto(%d, %p, %ld, 0,  %s)\n", th_info->id, inet_ntoa(th_info->host.ping_addr.sin_addr));
+		pthread_mutex_unlock(&g_print_lock);
+
+		if (sendto(port->sockfd, &tcp_h, sizeof(struct tcphdr), 0, 
+			(struct sockaddr *)&(th_info->host.ping_addr), sizeof(struct sockaddr)) == -1)
 			return (return_error("ft_nmap: syn: send_syn(): sendto()"));
 		pthread_mutex_lock(&g_print_lock);printf("(%d) > sendto(): OK\n", th_info->id);pthread_mutex_unlock(&g_print_lock);
 
-		bzero(r_buf, IP_MAXPACKET);
+		sleep(1);
+		
+		// bzero(r_buf, strlen(r_buf));
 		r_buf = (u_char *)pcap_next(th_info->handle, &pkt_h);
 		// if (recvfrom(port->sockfd, r_buf, 1024, 0 , NULL, NULL) == -1)
 		// {

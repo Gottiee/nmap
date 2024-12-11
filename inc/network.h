@@ -29,8 +29,8 @@ typedef struct s_host
 {
 	char	*name;
 	t_scan_port *port_tab;
-	struct s_host *next;
 	struct sockaddr_in	ping_addr;
+	struct s_host *next;
 } t_host;
 
 typedef struct	s_thread_arg
@@ -47,7 +47,7 @@ typedef struct	s_thread_arg
 	uint16_t	index_port;
 	int		sockfd;
 	pcap_t	*handle;
-	t_host *host;
+	t_host host;
 }				t_thread_arg;
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
