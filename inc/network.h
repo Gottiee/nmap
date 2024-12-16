@@ -4,6 +4,7 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <netinet/ip.h>
+#include <poll.h>
 
 #define NO_THREAD 0
 
@@ -14,6 +15,15 @@
 
 #include <stdbool.h>
 #include <pcap.h>
+
+typedef	struct	s_pseudo_hdr
+{
+	uint32_t	src_ip;
+	uint32_t	dest_ip;
+	uint8_t	res;
+	uint8_t	proto;
+	uint16_t	tcp_len;
+}				t_pseudo_hdr;
 
 typedef struct s_scan_port
 {	

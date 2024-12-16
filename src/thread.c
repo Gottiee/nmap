@@ -91,7 +91,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 		tab_th_info[i].index_port = 0;
 		tab_th_info[i].data_ready = 0;
 		tab_th_info[i].scan_type = info->scan_type;
-		tab_th_info[i].sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
+		tab_th_info[i].sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 		if (tab_th_info[i].sockfd == -1)
 		{
 			send_end_signal(tab_th_info, i - 1);
@@ -103,7 +103,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 			printf("(%d) socket == 0\n", i);
 		}
 		struct timeval timeout;
-		timeout.tv_sec = 2;
+		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 		if (setsockopt(tab_th_info[i].sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
 		{
@@ -192,13 +192,11 @@ void threading_scan_port(t_info *info, t_host *current_host)
 // pthread_mutex_lock(&g_print_lock);printf("(main) Assigning to %d ...\n", th_id);pthread_mutex_unlock(&g_print_lock);			
 					memcpy(&(tab_th_info[th_id].host), current_host, sizeof(t_host));
 					tab_th_info[th_id].host.port_tab[port - info->first_port].nb = port;
+					tab_th_info[th_id].host.ping_addr.sin_port = port;
 					tab_th_info[th_id].index_port = port - info->first_port;
 					tab_th_info[th_id].data_ready = 1;
 					bzero(str_filter, IPADDR_STRLEN);
 					inet_ntop(AF_INET, &info->ping_addr.sin_addr, ip_buf, IPADDR_STRLEN);
-					sprintf(str_filter, "dst port %hu and ip dst %s and tcp", 
-								port, ip_buf);
-					setup_filter(str_filter, tab_th_info[th_id].handle);
 					pthread_cond_signal(&tab_th_info[th_id].cond);
 // pthread_mutex_lock(&g_print_lock);printf("(main) Signal sent: id:%d, port:%d  ...\n", th_id, tab_th_info[th_id].host->port_tab[port - info->first_port].nb);pthread_mutex_unlock(&g_print_lock);
 					pthread_mutex_unlock(&(tab_th_info[th_id].lock));

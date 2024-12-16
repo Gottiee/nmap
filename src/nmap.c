@@ -47,7 +47,6 @@ void ping_and_scan(t_info *info)
 	}
 	if (info->nb_thread > 0)
 		threading_scan_port(info, start_host);
-
 }
 
 int main( int argc, char **argv )

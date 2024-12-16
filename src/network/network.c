@@ -7,14 +7,18 @@
 
 // envoie d'un paquet -> reception du paquet (mise en place du truc + les filtres) -> analyse de la reponse
 
+
+
 void setup_filter(char *filter_str, pcap_t *handle)
 {
 	struct bpf_program filter;
+	printf("pcap_filter -> [%s]\n", filter_str);
 	if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
 	{
 		printf("Bad filter: %s\n", filter_str);
 		fatal_error_str("Bad filter: %s\n", pcap_geterr(handle));
 	}
+	// sprintf(str_filter, "src host %s and (tcp or icmp)", ip_buf);
 	if (pcap_setfilter(handle, &filter) == -1)
 		fatal_error_str("Error setting filters: %s\n", pcap_geterr(handle));
 	pcap_freecode(&filter);
@@ -27,7 +31,8 @@ pcap_t *init_handler(char *device)
 	int timeout_limit = 10000; /* In milliseconds */
 	char error_buffer[PCAP_ERRBUF_SIZE];
 
-	handle = pcap_open_live(device, BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
+	(void) device;
+	handle = pcap_open_live("enp4s0", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
 	if (!handle)
 		fatal_error_str("%s\n", error_buffer);
 	return handle;
@@ -51,7 +56,7 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	if ((getaddrinfo("172.217.20.174", NULL, &hints, &res)) != 0)
+	if ((getaddrinfo(input_domain, NULL, &hints, &res)) != 0)
 		return (0);
 	ping_addr->sin_family = AF_INET;
 	ping_addr->sin_port = htons(0);
