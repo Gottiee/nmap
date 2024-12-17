@@ -41,28 +41,24 @@ void	tests_r_packet( const u_char r_buf[IP_MAXPACKET], const uint8_t th_id )
 	return ;
 }
 
-
-bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type )
+void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type )
 {
-	// pthread_mutex_lock(&g_print_lock);printf("(%d) In handle_return_packet()\n", th_id);pthread_mutex_unlock(&g_print_lock);
-	tests_r_packet(r_buf, th_id);
-	
 	r_buf += 16;
 	struct iphdr	*r_ip = (struct iphdr *)(r_buf);
 	struct tcphdr	*r_tcp = (struct tcphdr *)(r_buf + (r_ip->ihl * 4));
 	struct icmphdr	*r_icmp = (struct icmphdr *)(r_buf + (r_ip->ihl * 4));
-	// struct in_addr	s_addr;
-	// s_addr.s_addr = r_ip->saddr;
-	(void) r_ip; (void) r_tcp; (void) port;
-	if (r_ip->protocol == IPPROTO_ICMP)
+
+	if (scan_type == SYN && r_ip->protocol == IPPROTO_ICMP)
 	{
+		pthread_mutex_lock(&g_print_lock);
+		printf("(%d) recv_tcp: handle_return: scap_type == %d | protocol == ICMP | type == %d | code == %d\n", 
+				th_id, scan_type, r_icmp->type, r_icmp->code);pthread_mutex_unlock(&g_print_lock);
 		//	ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13)
 		if (r_icmp->type == 3)
 		{
 			if (r_icmp->code == 1 || r_icmp->code == 2 || r_icmp->code == 3 
 				|| r_icmp->code == 9 || r_icmp->code == 10 || r_icmp->code == 13)
 			{
-				//	STATE = FILTERED
 				// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: handle return: icmp code %d type %d received\n", th_id, r_icmp->type, r_icmp->code);pthread_mutex_unlock(&g_print_lock);
 				port->state[scan_type] = FILTERED;
 			}
@@ -70,28 +66,26 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 		else
 		{
 			pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: handle return: icmp type %d received => error\n", th_id, r_icmp->type);pthread_mutex_unlock(&g_print_lock);
-			return (1);
 		}
 	}
 	else if (r_ip->protocol == IPPROTO_TCP)
 	{
 		// print_packet_raw(r_buf);
-		pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv TCP ", th_id);pthread_mutex_unlock(&g_print_lock);
-		if (r_tcp->syn)
+		// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv TCP ", th_id);pthread_mutex_unlock(&g_print_lock);
+	pthread_mutex_lock(&g_print_lock);
+	printf("(%d) recv_tcp: handle return: scan_type == %d | protocol == TCP | syn == %d | ack == %d | rst == %d\n", 
+			th_id, scan_type, r_tcp->syn, r_tcp->ack, r_tcp->rst);pthread_mutex_unlock(&g_print_lock);
+		if (scan_type == SYN && r_tcp->syn && r_tcp->ack)
 		{
-			pthread_mutex_lock(&g_print_lock);printf("(%d)flag SYN ", th_id);pthread_mutex_unlock(&g_print_lock);
-			//	STATE = OPEN
+			// pthread_mutex_lock(&g_print_lock);printf("(%d)flag SYN ", th_id);pthread_mutex_unlock(&g_print_lock);
 			port->state[scan_type] = OPEN;
 		}
-		if (r_tcp->ack)
+		else if (r_tcp->rst)
 		{
-			pthread_mutex_lock(&g_print_lock);printf("(%d)flag ACK ", th_id);pthread_mutex_unlock(&g_print_lock);
-		}
-		if (r_tcp->rst)
-		{
-			pthread_mutex_lock(&g_print_lock);printf("(%d)flag RST ", th_id);pthread_mutex_unlock(&g_print_lock);
-			//	STATE = CLOSED
-			port->state[scan_type] = CLOSE;
+			if (scan_type == ACK)
+				port->state[scan_type] = UNFILTERED;
+			else
+				port->state[scan_type] = CLOSE; 
 		}
 		printf("\n");
 	}
@@ -102,6 +96,17 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 		// print_packet_raw(r_buf);
 		port->state[scan_type] = CLOSE;
 	}
+}
+
+bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type )
+{
+	// pthread_mutex_lock(&g_print_lock);printf("(%d) In handle_return_packet()\n", th_id);pthread_mutex_unlock(&g_print_lock);
+	tests_r_packet(r_buf, th_id);
+	
 	// pthread_mutex_lock(&g_print_lock);printf("(%s)\n", inet_ntoa(s_addr));pthread_mutex_unlock(&g_print_lock);
+	if (scan_type != UDP)
+		recv_tcp(r_buf, port, th_id, scan_type);
+	// else
+		// recv_udp(r_buf, port, th_id, scan_type);
 	return (0);
 }

@@ -22,11 +22,7 @@ handle_arg \
 thread \
 network/network \
 network/UDP \
-network/SYN \
-network/XMAS \
-network/FIN \
-network/NULL \
-network/ACK \
+network/TCP \
 network/analyse_packet \
 icmp \
 utils \

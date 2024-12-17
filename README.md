@@ -97,3 +97,5 @@ char *return_string()
 - [ ] free les malloc / la list chainee dans le fatalerror/ perror
 - permettre de scanner un seul port
 - init_handler interface pas en dur
+- Add -scan ALL dans le parsing
+- compteur port open pour print final

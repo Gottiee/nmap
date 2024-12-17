@@ -125,51 +125,21 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 {
 	// printf("scan_switch: addr = %s\n", inet_ntoa(host->ping_addr.sin_addr));
-	switch (th_info->scan_type)
-	{
-		case SYN:
-			scan_syn(port, th_info);
-			break ;
-		case S_NULL:
-			scan_null(port, th_info);
-			break ;
-		case ACK:
-			scan_ack(port, th_info);
-			break ;
-		case FIN:
-			scan_fin(port, th_info);
-			break ;
-		case XMAS:
-			scan_xmas(port, th_info);
-			break ;
-		case UDP:
-			scan_udp(port, th_info);
-			break ;
-		case ALL:
-			scan_all(port, th_info);
-			break ;
-		default:
-			break ;
-	}
+	if (th_info->scan_type <= XMAS)
+		scan_tcp(port, th_info);
+	else if (th_info->scan_type == UDP)
+		scan_udp(port, th_info);
+	else if (th_info->scan_type == ALL)
+		scan_all(port, th_info);
 }
 
 bool scan_all( t_scan_port *port, t_thread_arg *th_info )
 {
-	th_info->scan_type = SYN;
-	scan_syn(port, th_info);
-	
-	th_info->scan_type = S_NULL;
-	scan_null(port, th_info);
-	
-	th_info->scan_type = ACK;
-	scan_ack(port, th_info);
-	
-	th_info->scan_type = FIN;
-	scan_fin(port, th_info);
-	
-	th_info->scan_type = XMAS;
-	scan_xmas(port, th_info);
-	
+	for (uint8_t i = SYN; i <= XMAS; i++)
+	{
+		th_info->scan_type = i;
+		scan_tcp(port, th_info);
+	}
 	th_info->scan_type = UDP;
 	scan_udp(port, th_info);
 

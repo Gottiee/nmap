@@ -11,7 +11,8 @@
 #define OPEN 1
 #define CLOSE 2
 #define FILTERED 3
-#define OPEN_FILT 4
+#define UNFILTERED 4
+#define OPEN_FILT 5
 
 #include <stdbool.h>
 #include <pcap.h>
@@ -70,7 +71,7 @@ bool scan_all( t_scan_port *port, t_thread_arg *th_info );
 bool scan_ack( t_scan_port *port, const t_thread_arg *th_info );
 bool scan_fin( t_scan_port *port, const t_thread_arg *th_info );
 bool scan_null( t_scan_port *port,const t_thread_arg *th_info );
-bool scan_syn( t_scan_port *port, const t_thread_arg *th_info );
+bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info );
 bool scan_xmas( t_scan_port *port,const t_thread_arg *th_info );
 bool scan_udp( t_scan_port *port, const t_thread_arg *th_info );
 void setup_filter(char *filter_str, pcap_t *handle);
