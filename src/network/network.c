@@ -7,11 +7,21 @@
 
 // envoie d'un paquet -> reception du paquet (mise en place du truc + les filtres) -> analyse de la reponse
 
+uint16_t get_random_port( void )
+{
+    return (syscall(SYS_gettid) + rand() % (65535 - 49152 + 1) + 49152);
+}
+
 void setup_filter(char *filter_str, pcap_t *handle)
 {
 	struct bpf_program filter;
+	printf("pcap_filter -> [%s]\n", filter_str);
 	if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
+	{
+		printf("Bad filter: %s\n", filter_str);
 		fatal_error_str("Bad filter: %s\n", pcap_geterr(handle));
+	}
+	// sprintf(str_filter, "src host %s and (tcp or icmp)", ip_buf);
 	if (pcap_setfilter(handle, &filter) == -1)
 		fatal_error_str("Error setting filters: %s\n", pcap_geterr(handle));
 	pcap_freecode(&filter);
@@ -24,7 +34,8 @@ pcap_t *init_handler(char *device)
 	int timeout_limit = 10000; /* In milliseconds */
 	char error_buffer[PCAP_ERRBUF_SIZE];
 
-	handle = pcap_open_live(device, BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
+	(void) device;
+	handle = pcap_open_live("enp0s3", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
 	if (!handle)
 		fatal_error_str("%s\n", error_buffer);
 	return handle;
@@ -49,7 +60,7 @@ pcap_if_t *init_device(t_info *info)
 			dev_addr->addr->sa_family == AF_INET) {
 			struct sockaddr_in *addr = (struct sockaddr_in *)dev_addr->addr;
 			// printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
-			info->ip_src = addr->sin_addr.s_addr;
+			info->ip_src = addr->sin_addr;
 			break;
 		}
 	}
@@ -58,6 +69,7 @@ pcap_if_t *init_device(t_info *info)
 
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 {
+	(void)input_domain;
 	struct addrinfo hints, *res;
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -86,74 +98,96 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-void	scan_switch( t_scan_port *port, t_host *host, const uint8_t scan_type, const uint8_t th_id)
+void	scan_switch( t_scan_port *port, const t_thread_arg *th_info)
 {
-	switch (scan_type)
+	// printf("scan_switch: addr = %s\n", inet_ntoa(host->ping_addr.sin_addr));
+	switch (th_info->scan_type)
 	{
 		case ALL:
-			scan_all(port, host, th_id);
+			scan_all(port, th_info);
 			break ;
 		case SYN:
-			scan_syn(port, *host, th_id);
+			scan_syn(port, th_info);
 			break ;
 		case S_NULL:
-			scan_null(port, *host, th_id);
+			scan_null(port, th_info);
 			break ;
 		case ACK:
-			scan_ack(port, *host, th_id);
+			scan_ack(port, th_info);
 			break ;
 		case FIN:
-			scan_fin(port, *host, th_id);
+			scan_fin(port, th_info);
 			break ;
 		case XMAS:
-			scan_xmas(port, *host, th_id);
+			scan_xmas(port, th_info);
 			break ;
 		case UDP:
-			scan_udp(port, *host, th_id);
+			scan_udp(port, th_info);
 			break ;
 		default:
 			break ;
 	}
 }
 
-bool scan_all( t_scan_port *port, t_host *host, const uint8_t th_id )
+bool scan_all( t_scan_port *port, const t_thread_arg *th_info )
 {
-	(void)host;
-	(void) th_id;
 	// t_info	*info = NULL; //  A RETIRER !!!!
-	printf("(%d)scan ALL\n", th_id);
-	scan_syn(port, *host, th_id);
-	scan_null(port, *host, th_id);
-	scan_ack(port, *host, th_id);
-	scan_fin(port, *host, th_id);
-	scan_xmas(port, *host, th_id);
-	scan_udp(port, *host, th_id);
+	// printf("(%d)scan ALL\n", th_id);
+	scan_syn(port, th_info);
+	scan_null(port, th_info);
+	scan_ack(port, th_info);
+	scan_fin(port, th_info);
+	scan_xmas(port, th_info);
+	scan_udp(port, th_info);
 	return (0); 
 }
 
-void scan(t_info *info, t_host *host)
+void	init_th_info( t_thread_arg *th_info, t_info *info, pcap_if_t *alldvsp, pcap_t *handle )
 {
-	pcap_if_t *alldvsp = NULL;
-	pcap_t *handle = NULL;
-	uint16_t	port = info->first_port;
-	uint16_t	last_port = info->first_port + info->port_range;
-
-	alldvsp = init_device(info);
-	handle = init_handler(info->device);
-
-	int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-	if (sockfd == -1)
+	th_info->handle = init_handler(info->device);
+	th_info->scan_type = info->scan_type;
+	th_info->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+	th_info->ip_src = info->ip_src;
+	if (th_info->sockfd == -1)
 	{
 		pcap_freealldevs(alldvsp);
 		pcap_close(handle);
 		fatal_perror("ft_nmap: socket");
 	}
-	host->ip_src = info->ip_src;
+	struct timeval timeout;
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;
+	if (setsockopt(th_info->sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
+	{
+		pcap_freealldevs(alldvsp);
+		pcap_close(handle);
+		fatal_perror("ft_nmap: setsockopt");
+	}
+}
+
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
+{
+	pcap_if_t *alldvsp = NULL;
+	pcap_t *handle = NULL;
+	uint16_t	port = info->first_port;
+	uint16_t	last_port = info->first_port + info->port_range;
+	t_thread_arg	th_info = {0};
+
+	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
+	alldvsp = init_device(info);
+	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
+	handle = init_handler(alldvsp->name);
+
+	init_th_info(&th_info, info, alldvsp, handle);
+	host->ping_addr = *ping_addr;
+	th_info.host = *host;
+	
+
+
 	for (; port < last_port; port++)
 	{
 		host->port_tab[port - info->first_port].nb = port;
-		host->port_tab[port - info->first_port].sockfd = sockfd;
-		scan_switch(&host->port_tab[port - info->first_port], host, info->scan_type, NO_THREAD);
+		scan_switch(&host->port_tab[port - info->first_port], &th_info);
 	}
 
 	pcap_freealldevs(alldvsp);

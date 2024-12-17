@@ -95,5 +95,8 @@ char *return_string()
 ## TODO
 
 - [ ] free les malloc / la list chainee dans le fatalerror/ perror
-- [ ] appeller init_device() dans les threads
-- [ ] probleme de read sur le print ?
+- randomiser les ports source , eviter les doublons
+- modifier init_handler
+- modifier get_local_addr() 
+- mettre host en argument des functions de scans
+- permettre de scanner un seul port
