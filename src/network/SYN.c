@@ -104,12 +104,22 @@ void	tests_r_packet( const u_char r_buf[IP_MAXPACKET], const uint8_t th_id )
 	return ;
 }
 
+void	print_packet_raw( const u_char *packet )
+{
+	for (int i = 0; i < 60; i++)
+	{
+		printf("%.02x.", packet[i]);
+	}
+	printf("\n");
+}
+
 bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id )
 {
 	pthread_mutex_lock(&g_print_lock);printf("(%d) In handle_return_packet()\n", th_id);pthread_mutex_unlock(&g_print_lock);
 	tests_r_packet(r_buf, th_id);
 	
-	struct iphdr	*r_ip = (struct iphdr *)r_buf;
+	r_buf += 16;
+	struct iphdr	*r_ip = (struct iphdr *)(r_buf);
 	struct tcphdr	*r_tcp = (struct tcphdr *)(r_buf + (r_ip->ihl * 4));
 	struct icmphdr	*r_icmp = (struct icmphdr *)(r_buf + (r_ip->ihl * 4));
 	// struct in_addr	s_addr;
@@ -135,6 +145,7 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 	}
 	else if (r_ip->protocol == IPPROTO_TCP)
 	{
+		print_packet_raw(r_buf);
 		pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv TCP ", th_id);pthread_mutex_unlock(&g_print_lock);
 		if (r_tcp->syn)
 		{
@@ -150,15 +161,18 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 			pthread_mutex_lock(&g_print_lock);printf("(%d)flag RST ", th_id);pthread_mutex_unlock(&g_print_lock);
 			//	STATE = CLOSED
 		}
+		printf("\n");
 	}
 	else
 	{
 		pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv protocol %d\n", th_id, r_ip->protocol);pthread_mutex_unlock(&g_print_lock);
 		//	STATE = CLOSED
+		print_packet_raw(r_buf);
 	}
 	// pthread_mutex_lock(&g_print_lock);printf("(%s)\n", inet_ntoa(s_addr));pthread_mutex_unlock(&g_print_lock);
 	return (0);
 }
+
 
 bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 {
@@ -166,7 +180,7 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 
 	uint8_t	retry = 0;
 	const u_char	*r_data = NULL;
-	char	filter_str[27 + INET_ADDRSTRLEN + 1] = {0};
+	char	filter_str[1024] = {0};
 	int		ret_val = 0;
 	struct pcap_pkthdr	*pkt_h = NULL;
 	struct pollfd	pollfd = {0};
@@ -183,12 +197,52 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 	
 	pollfd.events = POLLIN;
 	pollfd.fd = pcap_get_selectable_fd(th_info->handle);
+	// pollfd.fd += 1;
+	printf("(%d) pollfd.fd == %d | sockfd == %d\n", th_info->id, pollfd.fd, th_info->sockfd);
 	if (pollfd.fd == -1)
 		fatal_perror("ft_nmap: pcap_get_selectable_fd");
 
-	sprintf(filter_str, "src host %s and (tcp or icmp)", inet_ntoa(th_info->host.ping_addr.sin_addr));
+	// sprintf(filter_str, "src host %s and (tcp or icmp)", inet_ntoa(th_info->host.ping_addr.sin_addr));
+	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d", inet_ntoa(th_info->host.ping_addr.sin_addr), port->nb);
 	setup_filter(filter_str, th_info->handle);
 
+	// for (; retry < 2; retry++)
+	// {
+	// 	if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 
+	// 		(struct sockaddr *)&(th_info->host.ping_addr), sizeof(struct sockaddr)) == -1)
+	// 		return (return_error("ft_nmap: syn: sendto(): sendto()"));
+	// 	ret_val = poll(&pollfd, 1, 2000);
+	// 	if (ret_val == -1)
+	// 		fatal_perror("ft_nmap: poll");
+	// 	else if (ret_val == 0)
+	// 	{
+	// 		printf(RED "(%d)>>> poll(%d) TO\n" RESET, th_info->id, port->nb);
+	// 		continue ;
+	// 	}
+	// 	int ret_val = pcap_next_ex(th_info->handle, &pkt_h, &r_data);
+	// 	if (ret_val == 1)
+	// 	{
+	// 		pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
+	// 		handle_return_packet(r_data, port, th_info->id);
+	// 		break ;
+	// 	}
+	// 	else if (ret_val == 0)
+	// 	{
+	// 		printf( RED "(%d) >>> pcap_next(%d): TO\n"RESET, th_info->id, port->nb);
+	// 	}
+	// 	else if (ret_val == PCAP_ERROR_ACTIVATED)
+	// 	{
+	// 		printf( RED "(%d) >>> pcap_next(): capture created but not activated\n "RESET, th_info->id);
+	// 	}
+	// 	else if (ret_val == PCAP_ERROR)
+	// 	{
+	// 		printf( RED "(%d) >>> pcap_next(): ERROR\n "RESET, th_info->id);
+	// 	}
+	// 	else
+	// 	{
+	// 		pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == 0\n", th_info->id);pthread_mutex_unlock(&g_print_lock);
+	// 	}
+	// }
 	for (; retry < 2; retry++)
 	{
 		
@@ -196,37 +250,41 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 			(struct sockaddr *)&(th_info->host.ping_addr), sizeof(struct sockaddr)) == -1)
 			return (return_error("ft_nmap: syn: sendto(): sendto()"));
 
-		ret_val = poll(&pollfd, 1, 2000);
+	arm_poll:
+		ret_val = poll(&pollfd, 1, 400);
 		if (ret_val == -1)
 			fatal_perror("ft_nmap: poll");
 		else if (ret_val == 0)
 		{
-			printf(RED ">>> poll() TO\n" RESET);
-			// continue ;
+			printf(RED "(%d)>>> poll(%d) TO\n" RESET, th_info->id, port->nb);
+			continue ;
 		}
-
-		int ret_val = pcap_next_ex(th_info->handle, &pkt_h, &r_data);
-		if (ret_val == 1)
+		else if (ret_val >= 0 && pollfd.revents & POLLIN)
 		{
-			pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(): received\n " RESET, th_info->id);pthread_mutex_unlock(&g_print_lock);
-			handle_return_packet(r_data, port, th_info->id);
-			break ;
-		}
-		else if (ret_val == 0)
-		{
-			printf( RED "(%d) >>> pcap_next(): TO\n"RESET, th_info->id);
-		}
-		else if (ret_val == PCAP_ERROR_ACTIVATED)
-		{
-			printf( RED "(%d) >>> pcap_next(): capture created but not activated\n "RESET, th_info->id);
-		}
-		else if (ret_val == PCAP_ERROR)
-		{
-			printf( RED "(%d) >>> pcap_next(): ERROR\n "RESET, th_info->id);
+			ret_val = pcap_next_ex(th_info->handle, &pkt_h, &r_data);
+			if (ret_val == 1)
+			{
+				pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
+				handle_return_packet(r_data, port, th_info->id);
+				break ;
+			}
+			else if (ret_val == 0)
+			{
+				printf( RED "(%d) >>> pcap_next(%d): TO\n"RESET, th_info->id, port->nb);
+				goto arm_poll;
+			}
+			else if (ret_val == PCAP_ERROR_ACTIVATED)
+			{
+				printf( RED "(%d) >>> pcap_next(): capture created but not activated\n "RESET, th_info->id);
+			}
+			else if (ret_val == PCAP_ERROR)
+			{
+				printf( RED "(%d) >>> pcap_next(): ERROR\n "RESET, th_info->id);
+			}
 		}
 		else
 		{
-			pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == 0\n", th_info->id);pthread_mutex_unlock(&g_print_lock);
+			pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == %d\n", th_info->id, ret_val);pthread_mutex_unlock(&g_print_lock);
 		}
 	}
 	return (0);

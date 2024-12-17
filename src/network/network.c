@@ -30,14 +30,38 @@ void setup_filter(char *filter_str, pcap_t *handle)
 pcap_t *init_handler(char *device)
 {
 	pcap_t *handle;
-	int packet_count_limit = 1;
-	int timeout_limit = 10000; /* In milliseconds */
+	// int packet_count_limit = 1;
+	// int timeout_limit = 10000; /* In milliseconds */
 	char error_buffer[PCAP_ERRBUF_SIZE];
 
 	(void) device;
-	handle = pcap_open_live("enp0s3", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
-	if (!handle)
-		fatal_error_str("%s\n", error_buffer);
+	// handle = pcap_open_live("enp0s3", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
+	// if (!handle)
+	// 	fatal_error_str("%s\n", error_buffer);
+	handle = pcap_create("any", error_buffer);
+	if (handle == NULL)
+		fatal_error("pcap_create()");
+	 if (pcap_set_snaplen(handle, 100) != 0) {
+		fatal_error("pcap_create()");
+    }
+    if (pcap_set_immediate_mode(handle, 1) != 0) {
+		fatal_error("pcap_immeiatrjfhwae_mode()");
+    }
+    if (pcap_set_timeout(handle, 500) != 0) {
+		fatal_error("pcap_timeout()");
+    }
+    if (pcap_setnonblock(handle, 1, NULL) != 0) {
+		fatal_error("pcap_setnoblock()");
+    }
+    if (pcap_set_promisc(handle, 1) != 0) {
+		fatal_error("pcap_set_promisc()");
+    }
+    if (pcap_activate(handle) != 0) {
+		fatal_error("pcap_activate()");
+    }
+    if (pcap_datalink(handle) != DLT_LINUX_SLL) {
+		fatal_error("pcap_datalink()");
+    }
 	return handle;
 }
 
@@ -181,6 +205,7 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 	init_th_info(&th_info, info, alldvsp, handle);
 	host->ping_addr = *ping_addr;
 	th_info.host = *host;
+	th_info.id = 0;
 	
 
 

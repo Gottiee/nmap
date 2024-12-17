@@ -95,8 +95,5 @@ char *return_string()
 ## TODO
 
 - [ ] free les malloc / la list chainee dans le fatalerror/ perror
-- randomiser les ports source , eviter les doublons
-- modifier init_handler
-- modifier get_local_addr() 
-- mettre host en argument des functions de scans
 - permettre de scanner un seul port
+- init_handler interface pas en dur
