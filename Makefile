@@ -27,6 +27,7 @@ network/XMAS \
 network/FIN \
 network/NULL \
 network/ACK \
+network/analyse_packet \
 icmp \
 utils \
 print

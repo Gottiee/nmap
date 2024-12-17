@@ -39,8 +39,7 @@ t_host *init_host_list(char *name, t_info *info)
         fatal_perror("Error malloc \"t_host start\"");
     start->next = NULL;
     start->name = name;
-	// printf("port_range == %d\n", info->port_range);
-	start->port_tab = malloc(sizeof(t_scan_port) * (info->port_range));
+	start->port_tab = calloc(info->port_range, sizeof(t_scan_port));
 	if (start->port_tab == NULL)
 			fatal_perror("Malloc error \"t_host *new\"");
     return start;

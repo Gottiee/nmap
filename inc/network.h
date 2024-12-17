@@ -17,6 +17,8 @@
 #include <pcap.h>
 #include <sys/syscall.h>
 
+extern pthread_mutex_t g_print_lock;
+
 typedef	struct	s_pseudo_hdr
 {
 	u_int32_t	source_address;
@@ -29,11 +31,7 @@ typedef	struct	s_pseudo_hdr
 typedef struct s_scan_port
 {	
 	uint16_t nb;
-	char *service;
-	int state; // open / filtered...
-	// int	sockfd;
-
-	bool done;
+	int state;
 } t_scan_port;
 
 typedef struct s_host
@@ -78,5 +76,9 @@ bool scan_udp( t_scan_port *port, const t_thread_arg *th_info );
 void setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler(char *device);
 pcap_if_t *init_device(t_info *info);
+
+//	ANALYSE PACKET
+bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id );
+
 
 #endif
