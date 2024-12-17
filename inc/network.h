@@ -31,7 +31,7 @@ typedef struct s_scan_port
 	uint16_t nb;
 	char *service;
 	int state; // open / filtered...
-	int	sockfd;
+	// int	sockfd;
 
 	bool done;
 } t_scan_port;
@@ -59,8 +59,10 @@ typedef struct	s_thread_arg
 	int		sockfd;
 	pcap_t	*handle;
 	t_host host;
+	struct in_addr	ip_src;
 }				t_thread_arg;
 
+uint16_t get_random_port( void );
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
 void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host);
@@ -75,6 +77,6 @@ bool scan_xmas( t_scan_port *port,const t_thread_arg *th_info );
 bool scan_udp( t_scan_port *port, const t_thread_arg *th_info );
 void setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler(char *device);
-pcap_if_t *init_device();
+pcap_if_t *init_device(t_info *info);
 
 #endif

@@ -44,6 +44,7 @@ typedef struct s_info t_info;
 typedef struct s_info
 {
 	char	**hostnames;
+	char	*device;
 	uint16_t	first_port;
 	uint16_t	port_range;
 	int nb_thread;
@@ -53,6 +54,7 @@ typedef struct s_info
 	t_host *start_host;
 	struct timeval time_start;
 	struct sockaddr_in	ping_addr;
+	struct in_addr	ip_src;
 } t_info;
 
 //	PRINT.C

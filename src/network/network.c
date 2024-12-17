@@ -7,7 +7,10 @@
 
 // envoie d'un paquet -> reception du paquet (mise en place du truc + les filtres) -> analyse de la reponse
 
-
+uint16_t get_random_port( void )
+{
+    return (syscall(SYS_gettid) + rand() % (65535 - 49152 + 1) + 49152);
+}
 
 void setup_filter(char *filter_str, pcap_t *handle)
 {
@@ -38,14 +41,29 @@ pcap_t *init_handler(char *device)
 	return handle;
 }
 
-pcap_if_t *init_device()
+pcap_if_t *init_device(t_info *info)
 {
 	char error_buffer[PCAP_ERRBUF_SIZE];
 	pcap_if_t *alldvsp = NULL;
+	pcap_addr_t *dev_addr;
 
-	/* Find a device */
-	if (pcap_findalldevs(&alldvsp, error_buffer))
-		fatal_error_str("%s\n", error_buffer);
+	if (pcap_findalldevs(&alldvsp, error_buffer) == -1)
+	{
+		pcap_freealldevs(alldvsp);
+		fatal_error_str("Nmap: pcap find device: %s\n", error_buffer);
+	}
+	if (!alldvsp)
+		fatal_error("Nmap: no interface found\n");
+	info->device = alldvsp->name;
+	for (dev_addr = alldvsp->addresses; dev_addr != NULL; dev_addr = dev_addr->next) {
+		if (dev_addr->addr && dev_addr->netmask &&
+			dev_addr->addr->sa_family == AF_INET) {
+			struct sockaddr_in *addr = (struct sockaddr_in *)dev_addr->addr;
+			// printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
+			info->ip_src = addr->sin_addr;
+			break;
+		}
+	}
 	return alldvsp;
 }
 
@@ -124,33 +142,52 @@ bool scan_all( t_scan_port *port, const t_thread_arg *th_info )
 	return (0); 
 }
 
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
+void	init_th_info( t_thread_arg *th_info, t_info *info, pcap_if_t *alldvsp, pcap_t *handle )
 {
-	(void)ping_addr;
-	(void)host;
-	(void)info;
-	pcap_if_t *alldvsp = NULL;
-	pcap_t *handle = NULL;
-	uint16_t	port = info->first_port;
-	uint16_t	last_port = info->first_port + info->port_range;
-
-	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
-	alldvsp = init_device();
-	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
-	handle = init_handler(alldvsp->name);
-
-	int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-	if (sockfd == -1)
+	th_info->handle = init_handler(info->device);
+	th_info->scan_type = info->scan_type;
+	th_info->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+	th_info->ip_src = info->ip_src;
+	if (th_info->sockfd == -1)
 	{
 		pcap_freealldevs(alldvsp);
 		pcap_close(handle);
 		fatal_perror("ft_nmap: socket");
 	}
+	struct timeval timeout;
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;
+	if (setsockopt(th_info->sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
+	{
+		pcap_freealldevs(alldvsp);
+		pcap_close(handle);
+		fatal_perror("ft_nmap: setsockopt");
+	}
+}
+
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
+{
+	pcap_if_t *alldvsp = NULL;
+	pcap_t *handle = NULL;
+	uint16_t	port = info->first_port;
+	uint16_t	last_port = info->first_port + info->port_range;
+	t_thread_arg	th_info = {0};
+
+	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
+	alldvsp = init_device(info);
+	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
+	handle = init_handler(alldvsp->name);
+
+	init_th_info(&th_info, info, alldvsp, handle);
+	host->ping_addr = *ping_addr;
+	th_info.host = *host;
+	
+
 
 	for (; port < last_port; port++)
 	{
 		host->port_tab[port - info->first_port].nb = port;
-		// scan_switch(&host->port_tab[port - info->first_port], th_info);
+		scan_switch(&host->port_tab[port - info->first_port], &th_info);
 	}
 
 	pcap_freealldevs(alldvsp);

@@ -16,20 +16,13 @@ void	print_packet( const uint8_t th_id, struct tcphdr *r_tcp, const char *r_dest
 	pthread_mutex_unlock(&g_print_lock);
 }
 
-uint16_t	get_checksum( const struct sockaddr_in *dst_addr, const struct tcphdr *tcp_h )
+uint16_t	get_checksum( const t_thread_arg *th_info, const struct tcphdr *tcp_h )
 {
-	(void)dst_addr;
 	t_pseudo_hdr	psh = {0};
 	char	pseudogram[sizeof(t_pseudo_hdr) + sizeof(struct tcphdr)] = {0};
-	// get_local_ip(tmp_ip_str, &tmp_ip);
-	// inet_pton(AF_INET, tmp_ip_str, &tmp_ip);
-	// pseudo_hdr.dest_ip = dst_addr->sin_addr.s_addr;
-	// pseudo_hdr.proto = IPPROTO_TCP;
-	// pseudo_hdr.tcp_len = sizeof(struct tcphdr);
-	// memcpy(raw_pseudo_hdr, (char *)&pseudo_hdr, sizeof(pseudo_hdr));
 
-	psh.source_address = inet_addr("10.0.2.15");  // Adresse source
-	psh.dest_address = dst_addr->sin_addr.s_addr;  // Adresse de destination
+	psh.source_address = th_info->ip_src.s_addr;  // Adresse source
+	psh.dest_address = th_info->host.ping_addr.sin_addr.s_addr;  // Adresse de destination
 	psh.placeholder = 0;
 	psh.protocol = IPPROTO_TCP;
 	psh.tcp_length = htons(sizeof(struct tcphdr));
@@ -39,7 +32,7 @@ uint16_t	get_checksum( const struct sockaddr_in *dst_addr, const struct tcphdr *
 	return(checksum((unsigned short *)pseudogram, sizeof(t_pseudo_hdr) + sizeof(struct tcphdr)));
 }
 
-void	init_ip_h( struct iphdr *iph, const uint32_t dest_addr )
+void	init_ip_h( struct iphdr *iph, const t_thread_arg *th_info )
 {
 	iph->ihl = 5;
 	iph->version = IPVERSION;
@@ -50,14 +43,14 @@ void	init_ip_h( struct iphdr *iph, const uint32_t dest_addr )
 	iph->ttl = 64;
 	iph->protocol = IPPROTO_TCP;
 	iph->check = 0;
-	iph->saddr = inet_addr("10.0.2.15");
-	iph->daddr = dest_addr;
+	iph->saddr = th_info->ip_src.s_addr;
+	iph->daddr = th_info->host.ping_addr.sin_addr.s_addr;
 }
 
 void	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const struct sockaddr_in *dest_addr )
 {
 	(void) dest_addr;
-	tcph->source = htons(34978);
+	tcph->source = htons(get_random_port());
 	tcph->dest = htons(port_nb);
 	tcph->seq = 0;
 	tcph->ack_seq = 0;
@@ -163,7 +156,7 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 		pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv protocol %d\n", th_id, r_ip->protocol);pthread_mutex_unlock(&g_print_lock);
 		//	STATE = CLOSED
 	}
-	pthread_mutex_lock(&g_print_lock);printf("(%s)\n", inet_ntoa(s_addr));pthread_mutex_unlock(&g_print_lock);
+	// pthread_mutex_lock(&g_print_lock);printf("(%s)\n", inet_ntoa(s_addr));pthread_mutex_unlock(&g_print_lock);
 	return (0);
 }
 
@@ -178,33 +171,30 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 	struct pcap_pkthdr	*pkt_h = NULL;
 	struct pollfd	pollfd = {0};
 	
-	char packet[4096];
+	char packet[4096] = {0};
 	struct iphdr *iph = (struct iphdr *) packet;
 	struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(struct iphdr));
 	
-	init_ip_h(iph, th_info->host.ping_addr.sin_addr.s_addr);
+	srand(time(NULL));
+	init_ip_h(iph, th_info);
 	iph->check = checksum((unsigned short *)packet, iph->tot_len);
 	init_tcp_h(tcph, port->nb, &th_info->host.ping_addr);
-	tcph->check = get_checksum(&th_info->host.ping_addr, tcph);
+	tcph->check = get_checksum(th_info, tcph);
 	
 	pollfd.events = POLLIN;
 	pollfd.fd = pcap_get_selectable_fd(th_info->handle);
 	if (pollfd.fd == -1)
 		fatal_perror("ft_nmap: pcap_get_selectable_fd");
-	pthread_mutex_lock(&g_print_lock);printf("(%d)tcp_h.source == %d\n", th_info->id, tcph->source);pthread_mutex_unlock(&g_print_lock);
+
+	sprintf(filter_str, "src host %s and (tcp or icmp)", inet_ntoa(th_info->host.ping_addr.sin_addr));
+	setup_filter(filter_str, th_info->handle);
 
 	for (; retry < 2; retry++)
 	{
-		sprintf(filter_str, "src host %s and (tcp or icmp)", inet_ntoa(th_info->host.ping_addr.sin_addr));
-		setup_filter(filter_str, th_info->handle);
-		pthread_mutex_lock(&g_print_lock);\
-		printf("(%d) sockaddr_in : addr => %s | port == %d | family == %d\n", 
-			th_info->id, inet_ntoa(th_info->host.ping_addr.sin_addr), th_info->host.ping_addr.sin_port, th_info->host.ping_addr.sin_family);
-		pthread_mutex_unlock(&g_print_lock);
-		if (sendto(port->sockfd, packet, iph->tot_len, 0, 
+		
+		if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 
 			(struct sockaddr *)&(th_info->host.ping_addr), sizeof(struct sockaddr)) == -1)
 			return (return_error("ft_nmap: syn: sendto(): sendto()"));
-		pthread_mutex_lock(&g_print_lock);printf("(%d) > sendto(p: %hhu): OK\n", th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
 
 		ret_val = poll(&pollfd, 1, 2000);
 		if (ret_val == -1)
@@ -212,13 +202,15 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 		else if (ret_val == 0)
 		{
 			printf(RED ">>> poll() TO\n" RESET);
-			continue ;
+			// continue ;
 		}
+
 		int ret_val = pcap_next_ex(th_info->handle, &pkt_h, &r_data);
 		if (ret_val == 1)
 		{
-			pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(): received\n RESET", th_info->id);pthread_mutex_unlock(&g_print_lock);
+			pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(): received\n " RESET, th_info->id);pthread_mutex_unlock(&g_print_lock);
 			handle_return_packet(r_data, port, th_info->id);
+			break ;
 		}
 		else if (ret_val == 0)
 		{
@@ -236,20 +228,6 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 		{
 			pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == 0\n", th_info->id);pthread_mutex_unlock(&g_print_lock);
 		}
-
-
-		// bzero(r_buf, IP_MAXPACKET);
-		// socklen_t	len = sizeof(struct sockaddr);
-		// if (recvfrom(port->sockfd, r_buf, IP_MAXPACKET, 0, (struct sockaddr *)&th_info->host.ping_addr, &len) == -1)
-		// {
-		// 	if (errno == ETIMEDOUT)
-		// 		printf(" >>> recfrom(): TO \n");
-		// 	else
-		// 		printf("Recvfrom fail\n");
-		// }
-		// handle_return_packet(r_data, port, th_info->id);
 	}
-	
-
 	return (0);
 }
