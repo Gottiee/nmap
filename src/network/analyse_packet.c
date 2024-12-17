@@ -42,7 +42,7 @@ void	tests_r_packet( const u_char r_buf[IP_MAXPACKET], const uint8_t th_id )
 }
 
 
-bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id )
+bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type )
 {
 	// pthread_mutex_lock(&g_print_lock);printf("(%d) In handle_return_packet()\n", th_id);pthread_mutex_unlock(&g_print_lock);
 	tests_r_packet(r_buf, th_id);
@@ -64,12 +64,12 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 			{
 				//	STATE = FILTERED
 				// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: handle return: icmp code %d type %d received\n", th_id, r_icmp->type, r_icmp->code);pthread_mutex_unlock(&g_print_lock);
-				port->state = FILTERED;
+				port->state[scan_type] = FILTERED;
 			}
 		}
 		else
 		{
-			// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: handle return: icmp type %d received => error\n", th_id, r_icmp->type);pthread_mutex_unlock(&g_print_lock);
+			pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn: handle return: icmp type %d received => error\n", th_id, r_icmp->type);pthread_mutex_unlock(&g_print_lock);
 			return (1);
 		}
 	}
@@ -79,19 +79,19 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 		pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv TCP ", th_id);pthread_mutex_unlock(&g_print_lock);
 		if (r_tcp->syn)
 		{
-			// pthread_mutex_lock(&g_print_lock);printf("(%d)flag SYN ", th_id);pthread_mutex_unlock(&g_print_lock);
+			pthread_mutex_lock(&g_print_lock);printf("(%d)flag SYN ", th_id);pthread_mutex_unlock(&g_print_lock);
 			//	STATE = OPEN
-			port->state = OPEN;
+			port->state[scan_type] = OPEN;
 		}
 		if (r_tcp->ack)
 		{
-			// pthread_mutex_lock(&g_print_lock);printf("(%d)flag ACK ", th_id);pthread_mutex_unlock(&g_print_lock);
+			pthread_mutex_lock(&g_print_lock);printf("(%d)flag ACK ", th_id);pthread_mutex_unlock(&g_print_lock);
 		}
 		if (r_tcp->rst)
 		{
-			// pthread_mutex_lock(&g_print_lock);printf("(%d)flag RST ", th_id);pthread_mutex_unlock(&g_print_lock);
+			pthread_mutex_lock(&g_print_lock);printf("(%d)flag RST ", th_id);pthread_mutex_unlock(&g_print_lock);
 			//	STATE = CLOSED
-			port->state = CLOSE;
+			port->state[scan_type] = CLOSE;
 		}
 		printf("\n");
 	}
@@ -100,7 +100,7 @@ bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t
 		// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): recv protocol %d\n", th_id, r_ip->protocol);pthread_mutex_unlock(&g_print_lock);
 			// STATE = CLOSED
 		// print_packet_raw(r_buf);
-		port->state = CLOSE;
+		port->state[scan_type] = CLOSE;
 	}
 	// pthread_mutex_lock(&g_print_lock);printf("(%s)\n", inet_ntoa(s_addr));pthread_mutex_unlock(&g_print_lock);
 	return (0);

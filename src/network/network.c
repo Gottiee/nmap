@@ -122,14 +122,11 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-void	scan_switch( t_scan_port *port, const t_thread_arg *th_info)
+void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 {
 	// printf("scan_switch: addr = %s\n", inet_ntoa(host->ping_addr.sin_addr));
 	switch (th_info->scan_type)
 	{
-		case ALL:
-			scan_all(port, th_info);
-			break ;
 		case SYN:
 			scan_syn(port, th_info);
 			break ;
@@ -148,21 +145,34 @@ void	scan_switch( t_scan_port *port, const t_thread_arg *th_info)
 		case UDP:
 			scan_udp(port, th_info);
 			break ;
+		case ALL:
+			scan_all(port, th_info);
+			break ;
 		default:
 			break ;
 	}
 }
 
-bool scan_all( t_scan_port *port, const t_thread_arg *th_info )
+bool scan_all( t_scan_port *port, t_thread_arg *th_info )
 {
-	// t_info	*info = NULL; //  A RETIRER !!!!
-	// printf("(%d)scan ALL\n", th_id);
+	th_info->scan_type = SYN;
 	scan_syn(port, th_info);
+	
+	th_info->scan_type = S_NULL;
 	scan_null(port, th_info);
+	
+	th_info->scan_type = ACK;
 	scan_ack(port, th_info);
+	
+	th_info->scan_type = FIN;
 	scan_fin(port, th_info);
+	
+	th_info->scan_type = XMAS;
 	scan_xmas(port, th_info);
+	
+	th_info->scan_type = UDP;
 	scan_udp(port, th_info);
+
 	return (0); 
 }
 

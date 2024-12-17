@@ -29,13 +29,13 @@ typedef struct s_info t_info;
 #include "colors.h"
 
 //	SCAN VALUES
-#define ALL 0
-#define SYN 1
-#define S_NULL 2
-#define ACK 3
-#define FIN 4
-#define XMAS 5
-#define UDP 6
+#define SYN 0
+#define S_NULL 1
+#define ACK 2
+#define FIN 3
+#define XMAS 4
+#define UDP 5
+#define ALL 6
 
 #define MAX_SCAN 65535
 #define IPADDR_STRLEN 15

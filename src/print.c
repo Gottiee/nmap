@@ -9,7 +9,7 @@ void	super_print( t_host *host, t_info *info )
 		for (uint16_t i = 0; i < info->port_range; i++)
 		{
 			printf("\tport %d |", host->port_tab[i].nb);
-			printf(" state %d\n", host->port_tab[i].state);
+			printf(" state %d\n", host->port_tab[i].state[info->scan_type]); //	FAUX SI SCAN ALL
 		}
 		host = host->next;
 	}

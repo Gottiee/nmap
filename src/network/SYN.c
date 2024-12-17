@@ -162,7 +162,7 @@ bool scan_syn( t_scan_port *port, const t_thread_arg *th_info )
 			if (ret_val == 1)
 			{
 				pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
-				handle_return_packet(r_data, port, th_info->id);
+				handle_return_packet(r_data, port, th_info->id, th_info->scan_type);
 				break ;
 			}
 			else if (ret_val == 0)

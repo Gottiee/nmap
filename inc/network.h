@@ -31,7 +31,7 @@ typedef	struct	s_pseudo_hdr
 typedef struct s_scan_port
 {	
 	uint16_t nb;
-	int state;
+	int state[6];
 } t_scan_port;
 
 typedef struct s_host
@@ -65,8 +65,8 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
 void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host);
 
-void	scan_switch( t_scan_port *port, const t_thread_arg *th_info );
-bool scan_all( t_scan_port *port, const t_thread_arg *th_info );
+void	scan_switch( t_scan_port *port, t_thread_arg *th_info );
+bool scan_all( t_scan_port *port, t_thread_arg *th_info );
 bool scan_ack( t_scan_port *port, const t_thread_arg *th_info );
 bool scan_fin( t_scan_port *port, const t_thread_arg *th_info );
 bool scan_null( t_scan_port *port,const t_thread_arg *th_info );
@@ -78,7 +78,7 @@ pcap_t *init_handler(char *device);
 pcap_if_t *init_device(t_info *info);
 
 //	ANALYSE PACKET
-bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id );
+bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type );
 
 
 #endif
