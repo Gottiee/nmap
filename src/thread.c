@@ -143,6 +143,11 @@ void	*scan_routine( void *arg )
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
 
 	pthread_mutex_lock(&(th_info->lock));
+	if (connect(th_info->sockfd, (struct sockaddr *)&th_info->host.ping_addr.sin_addr.s_addr, sizeof(th_info->host.ping_addr)) == -1)
+	{
+		fprintf(stderr, "ft_nmap: connect : %s(%d)\n", strerror(errno), errno);
+	}
+
 	while (check_g_done() == 0)
 	{
 		th_info->data_ready = 0;

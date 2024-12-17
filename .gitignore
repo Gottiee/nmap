@@ -2,3 +2,5 @@ obj
 ft_nmap
 .vscode
 hosts.txt
+test
+tmp.c

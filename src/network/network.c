@@ -32,7 +32,7 @@ pcap_t *init_handler(char *device)
 	char error_buffer[PCAP_ERRBUF_SIZE];
 
 	(void) device;
-	handle = pcap_open_live("enp4s0", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
+	handle = pcap_open_live("enp0s3", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
 	if (!handle)
 		fatal_error_str("%s\n", error_buffer);
 	return handle;

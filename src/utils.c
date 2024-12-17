@@ -105,7 +105,7 @@ void get_local_ip( char *buffer, struct sockaddr_in *tmp_ip )
 			{
 				memcpy(&tmp_ip->sin_addr, &addr->sin_addr, sizeof(struct sockaddr_in));
 				// printf("Interface: %s\n", ifa->ifa_name);
-				if (strcmp(ifa->ifa_name, "enp4s0") == 0)
+				if (strcmp(ifa->ifa_name, "enp0s3") == 0)
 				{
 					printf("copying >> ");
 					printf("IP Address: %s\n", ip);

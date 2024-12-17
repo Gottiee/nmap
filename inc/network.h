@@ -15,14 +15,15 @@
 
 #include <stdbool.h>
 #include <pcap.h>
+#include <sys/syscall.h>
 
 typedef	struct	s_pseudo_hdr
 {
-	uint32_t	src_ip;
-	uint32_t	dest_ip;
-	uint8_t	res;
-	uint8_t	proto;
-	uint16_t	tcp_len;
+	u_int32_t	source_address;
+	u_int32_t	dest_address;
+	u_int8_t	placeholder;
+	u_int8_t	protocol;
+	u_int16_t	tcp_length;
 }				t_pseudo_hdr;
 
 typedef struct s_scan_port
