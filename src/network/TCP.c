@@ -71,7 +71,7 @@ void	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const uint8_t scan
 	tcph->window = htons(5840);
 }
 
-void	init_values( struct iphdr *iph, struct tcphdr *tcph, char packet[4096], struct pollfd *pollfd, const t_thread_arg *th_info, t_scan_port *port )
+void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096], struct pollfd *pollfd, const t_thread_arg *th_info, t_scan_port *port )
 {
 	char	filter_str[1024] = {0};
 
@@ -109,7 +109,7 @@ bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
 	struct iphdr *iph = (struct iphdr *) packet;
 	struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(struct iphdr));
 	
-	init_values(&iph, &tcph, packet, &pollfd, th_info, port);
+	init_values_tcp(iph, tcph, packet, &pollfd, th_info, port);
 
 	for (; retry < 2; retry++)
 	{
