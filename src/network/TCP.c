@@ -71,21 +71,10 @@ void	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const uint8_t scan
 	tcph->window = htons(5840);
 }
 
-bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
+void	init_values( struct iphdr *iph, struct tcphdr *tcph, char packet[4096], struct pollfd *pollfd, const t_thread_arg *th_info, t_scan_port *port )
 {
-	// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb(%p) = %d | ping_addr == %s\n", th_info->id, &(port->nb), port->nb, inet_ntoa(th_info->host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
-
-	uint8_t	retry = 0;
-	const u_char	*r_data = NULL;
 	char	filter_str[1024] = {0};
-	int		ret_val = 0;
-	struct pcap_pkthdr	*pkt_h = NULL;
-	struct pollfd	pollfd = {0};
-	
-	char packet[4096] = {0};
-	struct iphdr *iph = (struct iphdr *) packet;
-	struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(struct iphdr));
-	
+
 	srand(time(NULL));
 	init_ip_h(iph, th_info);
 	iph->check = checksum((unsigned short *)packet, iph->tot_len);
@@ -96,14 +85,31 @@ bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
 	else
 		port->state[th_info->scan_type] = FILTERED;
 	
-	pollfd.events = POLLIN;
-	pollfd.fd = pcap_get_selectable_fd(th_info->handle);
-	if (pollfd.fd == -1)
+	pollfd->events = POLLIN;
+	pollfd->fd = pcap_get_selectable_fd(th_info->handle);
+	if (pollfd->fd == -1)
 		fatal_perror("ft_nmap: pcap_get_selectable_fd");
 
 	// sprintf(filter_str, "src host %s and (tcp or icmp)", inet_ntoa(th_info->host.ping_addr.sin_addr));
 	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d", inet_ntoa(th_info->host.ping_addr.sin_addr), port->nb);
 	setup_filter(filter_str, th_info->handle);
+
+}
+
+bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
+{
+	// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb(%p) = %d | ping_addr == %s\n", th_info->id, &(port->nb), port->nb, inet_ntoa(th_info->host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
+
+	uint8_t	retry = 0;
+	const u_char	*r_data = NULL;
+	int		ret_val = 0;
+	struct pcap_pkthdr	*pkt_h = NULL;
+	struct pollfd	pollfd = {0};
+	char packet[4096] = {0};
+	struct iphdr *iph = (struct iphdr *) packet;
+	struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(struct iphdr));
+	
+	init_values(&iph, &tcph, packet, &pollfd, th_info, port);
 
 	for (; retry < 2; retry++)
 	{
@@ -132,21 +138,18 @@ bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
 			}
 			else if (ret_val == 0)
 			{
-				printf( RED "(%d) >>> pcap_next(%d): TO\n"RESET, th_info->id, port->nb);
+				printf("(%d) >>> pcap_next(%d): timed out\n", th_info->id, port->nb);
 				goto arm_poll;
 			}
-			else if (ret_val == PCAP_ERROR_ACTIVATED)
+			else 
 			{
-				printf( RED "(%d) >>> pcap_next(): capture created but not activated\n "RESET, th_info->id);
-			}
-			else if (ret_val == PCAP_ERROR)
-			{
-				printf( RED "(%d) >>> pcap_next(): ERROR\n "RESET, th_info->id);
+				fprintf(stderr, "ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
+				return (1);
 			}
 		}
 		else
 		{
-			// pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == %d\n", th_info->id, ret_val);pthread_mutex_unlock(&g_print_lock);
+			pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == %d\n", th_info->id, ret_val);pthread_mutex_unlock(&g_print_lock);
 		}
 	}
 	return (0);
