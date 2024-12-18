@@ -163,7 +163,7 @@ void	*scan_routine( void *arg )
 		}
 		if (check_g_done() == 1 && th_info->data_ready == 0)
 			break ;
-pthread_mutex_lock(&g_print_lock);printf("(%d) socket: %d | Scanning %d ...\n", th_info->id, th_info->sockfd, th_info->host.port_tab[th_info->index_port].nb);pthread_mutex_unlock(&g_print_lock);
+// pthread_mutex_lock(&g_print_lock);printf("(%d) socket: %d | Scanning %d ...\n", th_info->id, th_info->sockfd, th_info->host.port_tab[th_info->index_port].nb);pthread_mutex_unlock(&g_print_lock);
 		scan_switch(&th_info->host.port_tab[th_info->index_port], th_info);
 	}
 	pthread_mutex_unlock(&(th_info->lock));
