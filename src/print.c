@@ -152,14 +152,11 @@ void	super_print( t_host *host, t_info *info )
 	{
 		printf("HOST: %s\n", host->name);
 		printf("Host is up\n");
-		// ici calculer le nombre de filtered / close ...
-		// int not_open = info->port_range - host->open;
-		// if (not_open != 0)
-			// printf("Not shown: %d filtered tcp ports (no-response)", not_open);
-		printf("Not shown: ? filtered tcp ports (no-response)\n");
-		// if (not_open != info->port_range)
-		// 	printf("PORT      STATE              SERVICE\n");
-		printf("PORT      STATE              SERVICE\n");
+		int not_open = info->port_range - host->open;
+		if (not_open != 0)
+			printf("Not shown: %d tcp ports\n", not_open);
+		if (not_open != info->port_range)
+			printf("PORT      STATE              SERVICE\n");
 		for (uint16_t i = 0; i < info->port_range; i++)
 			print_line(&host->port_tab[i], info);
 		host = host->next;

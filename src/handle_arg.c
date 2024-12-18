@@ -4,10 +4,11 @@ void	print_usage( void )
 {
 	printf("Printing usage ... \n");
 	printf("ft_nmap 1.0\n Usage: ./ft_nmap [--scan VALUE1 VALUE2 VALUE3] [--speedup number] [--ports n1/n2] --ip hostname|ip_addr.\n");
-	printf("--scan: VALUE can be one of these values: SYN, NULL, ACK, FIN, XMAS, UDP. One or multiple values can be specified.\n");
-	printf("--speedup: number must be a positive number less than 250 included.\n");
-	printf("--ports: n1 and n2 define a range of ports to scan. Both n1 and n2 must positive number. The range defined has to be less than 1024 long.\n");
-	printf("--ip: is required. hostname is a hostname and ip_addr a IPv4 ip address.\n");
+	printf("--scan VAL : VAL can be one of these values: SYN, NULL, ACK, FIN, XMAS, UDP. One or multiple values can be specified.\n");
+	printf("--speedup N : N must be a positive number less than 250 included.\n");
+	printf("--ports X/Y: X and Y define a range of ports to scan. Y is not required, only on port can be specified. Both X and Y must positive number. The range defined has to be less than 1024 long.\n");
+	printf("--ip x.x.x.x or hostname : is required. ip_addr a IPv4 ip address and hostname is a hostname. Only a single ip address or hostname is required.\n");
+	printf("--file filename: specifies a file containing multiple hostnames. ft_nmap will use the content as input.\n");
 }
 
 bool	parsing_return_error( char *s_err )
@@ -30,7 +31,7 @@ char	**error_handling( char ***hostnames )
 bool	define_scan( char ***argv, t_info *info )
 {
 	uint8_t	i = 0;
-	char *argv_list[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", NULL};
+	char *argv_list[8] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", "ALL", NULL};
 
 	++(*argv);
 	if (*argv == NULL || **argv == NULL || ***argv == '-' || ***argv == '\0')
@@ -62,6 +63,9 @@ bool	define_scan( char ***argv, t_info *info )
 			case 5:
 				info->scan_type = UDP;
 				break ;
+			case 6:
+				info->scan_type = ALL;
+				break ;
 			default:
 			return (parsing_return_error("Format error: scan: must be within this list -> SYN, NULL, ACK, FIN, XMAS, UDP"));
 		}
@@ -88,7 +92,12 @@ bool	get_port_number( unsigned short (*port_range)[2], char *argv, bool first )
 		i++;
 	}
 	if (argv[i] != sep)
-		return (return_error("Format error: port: Either port number is greater than 65535 or separator is different from '/'"));
+	{
+		if (argv[i] == '\0')
+			return (0);
+		else
+			return (return_error("Format error: port: Either port number is greater than 65535 or separator is different from '/'"));
+	}
 	else if (strcmp(s, "0") == 0 || (strlen(s) == 5 && strcmp(s, "65535") > 0))
 		return (return_error("Format error: scan: port number must be between 1 and 65535"));
 	(*port_range)[!first] = atoi(s);
@@ -111,11 +120,18 @@ bool	define_ports( unsigned short (*port_range)[2], char *argv )
 
 	if (get_port_number(port_range, argv, 1))
 		return (1);
-	argv = sep + 1;
-	if (get_port_number(port_range, argv, 0) == 1)
-		return (1);
-	if ((*port_range)[1] - (*port_range)[0] + 1 > 1024 || (*port_range)[0] >= (*port_range)[1])
-		return (return_error("Format error: port: port range must be between 1 and 1024 written in ascending order"));
+	if (sep != NULL)
+	{
+		argv = sep + 1;
+		if (get_port_number(port_range, argv, 0) == 1)
+			return (1);
+		if ((*port_range)[1] - (*port_range)[0] + 1 > 1024 || (*port_range)[0] >= (*port_range)[1])
+			return (return_error("Format error: port: port range must be between 1 and 1024 written in ascending order"));
+	}
+	else
+	{
+		(*port_range)[1] = (*port_range)[0];
+	}
 	return (0);
 }
 

@@ -42,6 +42,7 @@ typedef struct s_host
 	t_scan_port *port_tab;
 	struct sockaddr_in	ping_addr;
 	struct s_host *next;
+	uint8_t open;
 } t_host;
 
 typedef struct	s_thread_arg
@@ -58,29 +59,27 @@ typedef struct	s_thread_arg
 	uint16_t	index_port;
 	int		sockfd;
 	pcap_t	*handle;
-	t_host host;
+	t_host *host;
 	struct in_addr	ip_src;
 }				t_thread_arg;
 
 uint16_t get_random_port( void );
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *current_host);
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host, pcap_t *handle, pcap_if_t *alldvsp);
 
-void	scan_switch( t_scan_port *port, t_thread_arg *th_info );
-bool scan_all( t_scan_port *port, t_thread_arg *th_info );
-bool scan_ack( t_scan_port *port, const t_thread_arg *th_info );
-bool scan_fin( t_scan_port *port, const t_thread_arg *th_info );
-bool scan_null( t_scan_port *port,const t_thread_arg *th_info );
-bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info );
-bool scan_xmas( t_scan_port *port,const t_thread_arg *th_info );
+void scan_switch( t_scan_port *port, t_thread_arg *th_info );
+bool scan_all( t_scan_port *port, t_thread_arg th_info );
+
+
+bool scan_tcp( t_scan_port *port, t_thread_arg *th_info );
 bool scan_udp( t_scan_port *port, const t_thread_arg *th_info );
 void setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler(char *device);
 pcap_if_t *init_device(t_info *info);
 
 //	ANALYSE PACKET
-bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type );
 
+bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type, t_host *host );
 
 #endif

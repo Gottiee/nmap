@@ -149,10 +149,10 @@ void	*scan_routine( void *arg )
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
 
 	pthread_mutex_lock(&(th_info->lock));
-	if (connect(th_info->sockfd, (struct sockaddr *)&th_info->host.ping_addr.sin_addr.s_addr, sizeof(th_info->host.ping_addr)) == -1)
-	{
-		fprintf(stderr, "ft_nmap: connect : %s(%d)\n", strerror(errno), errno);
-	}
+	// if (connect(th_info->sockfd, (struct sockaddr *)&th_info->host->ping_addr.sin_addr.s_addr, sizeof(th_info->host->ping_addr)) == -1)
+	// {
+	// 	fprintf(stderr, "ft_nmap: connect : %s(%d)\n", strerror(errno), errno);
+	// }
 
 	while (check_g_done() == 0)
 	{
@@ -164,7 +164,7 @@ void	*scan_routine( void *arg )
 		if (check_g_done() == 1 && th_info->data_ready == 0)
 			break ;
 // pthread_mutex_lock(&g_print_lock);printf("(%d) socket: %d | Scanning %d ...\n", th_info->id, th_info->sockfd, th_info->host.port_tab[th_info->index_port].nb);pthread_mutex_unlock(&g_print_lock);
-		scan_switch(&th_info->host.port_tab[th_info->index_port], th_info);
+		scan_switch(&th_info->host->port_tab[th_info->index_port], th_info);
 	}
 	pthread_mutex_unlock(&(th_info->lock));
 	return (NULL);
@@ -173,7 +173,7 @@ void	*scan_routine( void *arg )
 void threading_scan_port(t_info *info, t_host *current_host)
 {
 	char	str_filter[49 + 1] = {0};
-	char	ip_buf[15] = {0};
+	// char	ip_buf[15] = {0};
 	int last_port = info->first_port + info->port_range;
 	int	port = info->first_port;
 	t_thread_arg	*tab_th_info = NULL;
@@ -188,6 +188,7 @@ void threading_scan_port(t_info *info, t_host *current_host)
 
 	while (current_host != NULL)
 	{
+		printf(YELLOW "Current host -> %s\n" RESET, current_host->name);
 		while (port < last_port)
 		{
 			for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)
@@ -200,13 +201,14 @@ void threading_scan_port(t_info *info, t_host *current_host)
 						continue ;
 					}
 // pthread_mutex_lock(&g_print_lock);printf("(main) Assigning to %d ...\n", th_id);pthread_mutex_unlock(&g_print_lock);			
-					memcpy(&(tab_th_info[th_id].host), current_host, sizeof(t_host));
-					tab_th_info[th_id].host.port_tab[port - info->first_port].nb = port;
-					tab_th_info[th_id].host.ping_addr.sin_port = port;
+					// memcpy(&(tab_th_info[th_id].host), current_host, sizeof(t_host));
+					tab_th_info[th_id].host = current_host;
+					tab_th_info[th_id].host->port_tab[port - info->first_port].nb = port;
+					// tab_th_info[th_id].host.ping_addr.sin_port = port;
 					tab_th_info[th_id].index_port = port - info->first_port;
 					tab_th_info[th_id].data_ready = 1;
 					bzero(str_filter, IPADDR_STRLEN);
-					inet_ntop(AF_INET, &info->ping_addr.sin_addr, ip_buf, IPADDR_STRLEN);
+					// inet_ntop(AF_INET, &info->ping_addr.sin_addr, ip_buf, IPADDR_STRLEN);
 					pthread_cond_signal(&tab_th_info[th_id].cond);
 // pthread_mutex_lock(&g_print_lock);printf("(main) Signal sent: id:%d, port:%d  ...\n", th_id, tab_th_info[th_id].host->port_tab[port - info->first_port].nb);pthread_mutex_unlock(&g_print_lock);
 					pthread_mutex_unlock(&(tab_th_info[th_id].lock));

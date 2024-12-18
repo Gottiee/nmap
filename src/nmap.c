@@ -20,7 +20,14 @@ void ping_and_scan(t_info *info)
 {
 	t_host *start_host = NULL;
 	t_host *current_host = NULL;
+	pcap_if_t *alldvsp = NULL;
+	pcap_t *handle = NULL;
 
+	if (info->nb_thread == 0)
+	{
+		alldvsp = init_device(info);
+		handle = init_handler("any");
+	}
 	for (int i = 0; info->hostnames[i]; i++)
 	{
 		if (!fill_sockaddr_in(info->hostnames[i], &info->ping_addr))
@@ -43,10 +50,15 @@ void ping_and_scan(t_info *info)
 		else
 			current_host = add_host_list(info->hostnames[i], start_host, info);
 		if (info->nb_thread == 0)
-			scan(&info->ping_addr, info, current_host);
+			scan(&info->ping_addr, info, current_host, handle, alldvsp);
 	}
 	if (info->nb_thread > 0)
 		threading_scan_port(info, start_host);
+	else
+	{
+		pcap_freealldevs(alldvsp);
+		pcap_close(handle);
+	}
 }
 
 int main( int argc, char **argv )

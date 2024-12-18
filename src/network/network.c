@@ -122,6 +122,19 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
+bool scan_all( t_scan_port *port, t_thread_arg th_info )
+{
+	for (uint8_t i = SYN; i <= XMAS; i++)
+	{
+		th_info.scan_type = i;
+		scan_tcp(port, &th_info);
+	}
+	th_info.scan_type = UDP;
+	scan_udp(port, &th_info);
+
+	return (0); 
+}
+
 void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 {
 	// printf("scan_switch: addr = %s\n", inet_ntoa(host->ping_addr.sin_addr));
@@ -130,21 +143,9 @@ void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 	else if (th_info->scan_type == UDP)
 		scan_udp(port, th_info);
 	else if (th_info->scan_type == ALL)
-		scan_all(port, th_info);
+		scan_all(port, *th_info);
 }
 
-bool scan_all( t_scan_port *port, t_thread_arg *th_info )
-{
-	for (uint8_t i = SYN; i <= XMAS; i++)
-	{
-		th_info->scan_type = i;
-		scan_tcp(port, th_info);
-	}
-	th_info->scan_type = UDP;
-	scan_udp(port, th_info);
-
-	return (0); 
-}
 
 void	init_th_info( t_thread_arg *th_info, t_info *info, pcap_if_t *alldvsp, pcap_t *handle )
 {
@@ -169,20 +170,15 @@ void	init_th_info( t_thread_arg *th_info, t_info *info, pcap_if_t *alldvsp, pcap
 	}
 }
 
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host, pcap_t *handle, pcap_if_t *alldvsp)
 {
-	pcap_if_t *alldvsp = NULL;
-	pcap_t *handle = NULL;
 	uint16_t	port = info->first_port;
 	uint16_t	last_port = info->first_port + info->port_range;
 	t_thread_arg	th_info = {0};
 
-	alldvsp = init_device(info);
-	handle = init_handler("any");
-
 	init_th_info(&th_info, info, alldvsp, handle);
 	host->ping_addr = *ping_addr;
-	th_info.host = *host;
+	th_info.host = host;
 	th_info.id = 0;
 	
 	for (; port < last_port; port++)
@@ -190,7 +186,4 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 		host->port_tab[port - info->first_port].nb = port;
 		scan_switch(&host->port_tab[port - info->first_port], &th_info);
 	}
-
-	pcap_freealldevs(alldvsp);
-	pcap_close(handle);
 }

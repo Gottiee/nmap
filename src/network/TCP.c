@@ -22,7 +22,7 @@ uint16_t	get_checksum( const t_thread_arg *th_info, const struct tcphdr *tcp_h )
 	char	pseudogram[sizeof(t_pseudo_hdr) + sizeof(struct tcphdr)] = {0};
 
 	psh.source_address = th_info->ip_src.s_addr;  // Adresse source
-	psh.dest_address = th_info->host.ping_addr.sin_addr.s_addr;  // Adresse de destination
+	psh.dest_address = th_info->host->ping_addr.sin_addr.s_addr;  // Adresse de destination
 	psh.placeholder = 0;
 	psh.protocol = IPPROTO_TCP;
 	psh.tcp_length = htons(sizeof(struct tcphdr));
@@ -41,7 +41,7 @@ void	init_ip_h( struct iphdr *iph, const t_thread_arg *th_info )
 	iph->ttl = 64;
 	iph->protocol = IPPROTO_TCP;
 	iph->saddr = th_info->ip_src.s_addr;
-	iph->daddr = th_info->host.ping_addr.sin_addr.s_addr;
+	iph->daddr = th_info->host->ping_addr.sin_addr.s_addr;
 }
 
 void	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const uint8_t scan_type )
@@ -91,15 +91,16 @@ void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096],
 		fatal_perror("ft_nmap: pcap_get_selectable_fd");
 
 	// sprintf(filter_str, "src host %s and (tcp or icmp)", inet_ntoa(th_info->host.ping_addr.sin_addr));
-	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d", inet_ntoa(th_info->host.ping_addr.sin_addr), port->nb);
+	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d", inet_ntoa(th_info->host->ping_addr.sin_addr), port->nb);
 	setup_filter(filter_str, th_info->handle);
 
 }
 
-bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
+bool scan_tcp( t_scan_port *port, t_thread_arg *th_info )
 {
 	// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb(%p) = %d | ping_addr == %s\n", th_info->id, &(port->nb), port->nb, inet_ntoa(th_info->host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
 
+	pthread_mutex_lock(&g_print_lock);printf( BG_BLUE "(%d) >>> SCANNING %d\n" RESET, th_info->id, th_info->scan_type);pthread_mutex_unlock(&g_print_lock);
 	uint8_t	retry = 0;
 	const u_char	*r_data = NULL;
 	int		ret_val = 0;
@@ -113,9 +114,8 @@ bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
 
 	for (; retry < 2; retry++)
 	{
-		
 		if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 
-			(struct sockaddr *)&(th_info->host.ping_addr), sizeof(struct sockaddr)) == -1)
+			(struct sockaddr *)&(th_info->host->ping_addr), sizeof(struct sockaddr)) == -1)
 			return (return_error("ft_nmap: syn: sendto(): sendto()"));
 
 	arm_poll:
@@ -133,7 +133,7 @@ bool scan_tcp( t_scan_port *port, const t_thread_arg *th_info )
 			if (ret_val == 1)
 			{
 				pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
-				handle_return_packet(r_data, port, th_info->id, th_info->scan_type);
+				handle_return_packet(r_data, port, th_info->id, th_info->scan_type, th_info->host);
 				break ;
 			}
 			else if (ret_val == 0)

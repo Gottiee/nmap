@@ -41,7 +41,7 @@ void	tests_r_packet( const u_char r_buf[IP_MAXPACKET], const uint8_t th_id )
 	return ;
 }
 
-void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type )
+void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type, t_host *host )
 {
 	r_buf += 16;
 	struct iphdr	*r_ip = (struct iphdr *)(r_buf);
@@ -79,6 +79,9 @@ void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 		{
 			// pthread_mutex_lock(&g_print_lock);printf("(%d)flag SYN ", th_id);pthread_mutex_unlock(&g_print_lock);
 			port->state[scan_type] = OPEN;
+			pthread_mutex_lock(&g_print_lock);
+			host->open ++;
+			pthread_mutex_unlock(&g_print_lock);
 		}
 		else if (r_tcp->rst)
 		{
@@ -98,14 +101,14 @@ void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 	}
 }
 
-bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type )
+bool	handle_return_packet( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, const uint8_t scan_type, t_host *host)
 {
 	// pthread_mutex_lock(&g_print_lock);printf("(%d) In handle_return_packet()\n", th_id);pthread_mutex_unlock(&g_print_lock);
 	tests_r_packet(r_buf, th_id);
 	
 	// pthread_mutex_lock(&g_print_lock);printf("(%s)\n", inet_ntoa(s_addr));pthread_mutex_unlock(&g_print_lock);
 	if (scan_type != UDP)
-		recv_tcp(r_buf, port, th_id, scan_type);
+		recv_tcp(r_buf, port, th_id, scan_type, host);
 	// else
 		// recv_udp(r_buf, port, th_id, scan_type);
 	return (0);

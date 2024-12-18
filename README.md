@@ -94,14 +94,22 @@ char *return_string()
 
 ## TODO
 
-- [ ] free les malloc / la list chainee dans le fatalerror/ perror
-- permettre de scanner un seul port
-- init_handler interface pas en dur
-- usage ne mets pas le fichier de configuration de host
+- memoire
+- free les malloc / la list chainee dans le fatalerror/ perror
+- valrind
+
+- pasing
+- permettre de scanner un seul port -> FAIT MAIS PAS TESTE
+- refaire le help aligné
+- ip + file options together ? 
+
+- thread:
 - file
-    - non multi thread
-        - scan all : ne scan pas tout les ports ? 
     - multi thread
         - ne scan pas tout les host
-- Add -scan ALL dans le parsing
-- compteur port open pour print final
+
+- printing
+- afficher tout les ports si `port_range < 25`
+
+- network
+- udp
