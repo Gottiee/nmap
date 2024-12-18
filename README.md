@@ -103,3 +103,5 @@ char *return_string()
         - scan all : ne scan pas tout les ports ? 
     - multi thread
         - ne scan pas tout les host
+- Add -scan ALL dans le parsing
+- compteur port open pour print final
