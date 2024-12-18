@@ -94,9 +94,6 @@ void print_all(t_scan_port *port, t_info *info)
 
 	for (int i = 0; i <= UDP; i++)
 	{
-		// a enlever
-		// port->state[i] = OPEN;
-
 		state = port->state[i];
 		if (state != OPEN && state != OPEN_FILT)
 			continue;
@@ -161,8 +158,8 @@ void	super_print( t_host *host, t_info *info )
 			// printf("Not shown: %d filtered tcp ports (no-response)", not_open);
 		printf("Not shown: ? filtered tcp ports (no-response)\n");
 		// if (not_open != info->port_range)
-		// 	printf("PORT      STATE             SERVICE\n");
-		printf("PORT      STATE             SERVICE\n");
+		// 	printf("PORT      STATE              SERVICE\n");
+		printf("PORT      STATE              SERVICE\n");
 		for (uint16_t i = 0; i < info->port_range; i++)
 			print_line(&host->port_tab[i], info);
 		host = host->next;
