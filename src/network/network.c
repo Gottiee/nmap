@@ -207,18 +207,14 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 	uint16_t	last_port = info->first_port + info->port_range;
 	t_thread_arg	th_info = {0};
 
-	// liste les devices et utilse le premier device utiliser la premiere interface trouvée (peut etre le secure ca)
 	alldvsp = init_device(info);
-	// creer un handler, qui va servir à ecouter sur l'interface seletionnée
-	handle = init_handler(alldvsp->name);
+	handle = init_handler("any");
 
 	init_th_info(&th_info, info, alldvsp, handle);
 	host->ping_addr = *ping_addr;
 	th_info.host = *host;
 	th_info.id = 0;
 	
-
-
 	for (; port < last_port; port++)
 	{
 		host->port_tab[port - info->first_port].nb = port;

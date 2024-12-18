@@ -21,14 +21,13 @@ t_host *add_host_list(char *name, t_host *start, t_info *info)
         fatal_perror("Malloc error \"t_host *new\"");
 
     while (start->next)
-    {
-        start->next = new;
-        new->next = NULL;
-        new->name = name;
-		start->port_tab = malloc(sizeof(t_scan_port) * (info->port_range));
-		if (start->port_tab == NULL)
-			fatal_perror("Malloc error \"t_host *new\"");
-    }
+        start = start->next;
+    start->next = new;
+    new->next = NULL;
+    new->name = name;
+    new->port_tab = calloc(info->port_range, sizeof(t_scan_port));
+    if (new->port_tab == NULL)
+        fatal_perror("Malloc error \"t_host *new\"");
     return new;
 }
 

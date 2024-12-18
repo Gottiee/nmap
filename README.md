@@ -97,3 +97,9 @@ char *return_string()
 - [ ] free les malloc / la list chainee dans le fatalerror/ perror
 - permettre de scanner un seul port
 - init_handler interface pas en dur
+- usage ne mets pas le fichier de configuration de host
+- file
+    - non multi thread
+        - scan all : ne scan pas tout les ports ? 
+    - multi thread
+        - ne scan pas tout les host

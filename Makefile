@@ -30,7 +30,8 @@ network/ACK \
 network/analyse_packet \
 icmp \
 utils \
-print
+print \
+service
 
 
 C_FILES		=	$(addsuffix .c, $(SRC_FILES))

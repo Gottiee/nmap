@@ -12,6 +12,7 @@
 #define CLOSE 2
 #define FILTERED 3
 #define OPEN_FILT 4
+#define CLOSE_FILT 5
 
 #include <stdbool.h>
 #include <pcap.h>
