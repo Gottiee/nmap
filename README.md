@@ -99,8 +99,6 @@ char *return_string()
 - valrind
 
 - pasing
-- permettre de scanner un seul port -> FAIT MAIS PAS TESTE
-- refaire le help aligné
 - ip + file options together ? 
 
 - thread:

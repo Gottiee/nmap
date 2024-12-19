@@ -112,6 +112,8 @@ bool scan_tcp( t_scan_port *port, t_thread_arg *th_info )
 	
 	init_values_tcp(iph, tcph, packet, &pollfd, th_info, port);
 
+	printf(YELLOW "(%d) Scan == %d | port == %d\n", th_info->id, th_info->scan_type, port->nb);
+
 	for (; retry < 2; retry++)
 	{
 		if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 

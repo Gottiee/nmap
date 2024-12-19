@@ -91,7 +91,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 		tab_th_info[i].id = i;
 		tab_th_info[i].index_port = 0;
 		tab_th_info[i].data_ready = 0;
-		tab_th_info[i].scan_type = info->scan_type;
+		tab_th_info[i].scan_type = info->scan_type[0];
 		tab_th_info[i].sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 		tab_th_info[i].ip_src = info->ip_src;
 		if (tab_th_info[i].sockfd == -1)
@@ -149,10 +149,6 @@ void	*scan_routine( void *arg )
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
 
 	pthread_mutex_lock(&(th_info->lock));
-	// if (connect(th_info->sockfd, (struct sockaddr *)&th_info->host->ping_addr.sin_addr.s_addr, sizeof(th_info->host->ping_addr)) == -1)
-	// {
-	// 	fprintf(stderr, "ft_nmap: connect : %s(%d)\n", strerror(errno), errno);
-	// }
 
 	while (check_g_done() == 0)
 	{
@@ -163,7 +159,6 @@ void	*scan_routine( void *arg )
 		}
 		if (check_g_done() == 1 && th_info->data_ready == 0)
 			break ;
-// pthread_mutex_lock(&g_print_lock);printf("(%d) socket: %d | Scanning %d ...\n", th_info->id, th_info->sockfd, th_info->host.port_tab[th_info->index_port].nb);pthread_mutex_unlock(&g_print_lock);
 		scan_switch(&th_info->host->port_tab[th_info->index_port], th_info);
 	}
 	pthread_mutex_unlock(&(th_info->lock));
@@ -173,7 +168,7 @@ void	*scan_routine( void *arg )
 void threading_scan_port(t_info *info, t_host *current_host)
 {
 	char	str_filter[49 + 1] = {0};
-	// char	ip_buf[15] = {0};
+	uint8_t scan = 0;
 	int last_port = info->first_port + info->port_range;
 	int	port = info->first_port;
 	t_thread_arg	*tab_th_info = NULL;
@@ -184,38 +179,38 @@ void threading_scan_port(t_info *info, t_host *current_host)
 	alldevsp = init_device(info);
 	init_threads(threads, tab_th_info, info, alldevsp);
 
-	// printf("thread(main): s_addr = %d\n", current_host->ping_addr.sin_addr.s_addr);
-
 	while (current_host != NULL)
 	{
 		printf(YELLOW "Current host -> %s\n" RESET, current_host->name);
-		while (port < last_port)
+		while (port < last_port)																// run through ports
 		{
-			for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)
+			while (scan < NB_MAX_SCAN && info->scan_type[scan] != -1)	// run through scan types
 			{
-				if (pthread_mutex_trylock(&(tab_th_info[th_id].lock)) == 0)
+				for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)	// run through threads
 				{
-					if (tab_th_info[th_id].data_ready == 1)
+					// printf("current scan == %d\n", info->scan_type[scan]);
+					if (pthread_mutex_trylock(&(tab_th_info[th_id].lock)) == 0)
 					{
+						if (tab_th_info[th_id].data_ready == 1)
+						{
+							pthread_mutex_unlock(&(tab_th_info[th_id].lock));
+							continue ;
+						}
+						tab_th_info[th_id].host = current_host;
+						tab_th_info[th_id].host->port_tab[port - info->first_port].nb = port;
+						tab_th_info[th_id].index_port = port - info->first_port;
+						tab_th_info[th_id].data_ready = 1;
+						tab_th_info[th_id].scan_type = info->scan_type[scan];
+						bzero(str_filter, IPADDR_STRLEN);
+						pthread_cond_signal(&tab_th_info[th_id].cond);
 						pthread_mutex_unlock(&(tab_th_info[th_id].lock));
-						continue ;
+						scan++;
+						usleep(10);
 					}
-// pthread_mutex_lock(&g_print_lock);printf("(main) Assigning to %d ...\n", th_id);pthread_mutex_unlock(&g_print_lock);			
-					// memcpy(&(tab_th_info[th_id].host), current_host, sizeof(t_host));
-					tab_th_info[th_id].host = current_host;
-					tab_th_info[th_id].host->port_tab[port - info->first_port].nb = port;
-					// tab_th_info[th_id].host.ping_addr.sin_port = port;
-					tab_th_info[th_id].index_port = port - info->first_port;
-					tab_th_info[th_id].data_ready = 1;
-					bzero(str_filter, IPADDR_STRLEN);
-					// inet_ntop(AF_INET, &info->ping_addr.sin_addr, ip_buf, IPADDR_STRLEN);
-					pthread_cond_signal(&tab_th_info[th_id].cond);
-// pthread_mutex_lock(&g_print_lock);printf("(main) Signal sent: id:%d, port:%d  ...\n", th_id, tab_th_info[th_id].host->port_tab[port - info->first_port].nb);pthread_mutex_unlock(&g_print_lock);
-					pthread_mutex_unlock(&(tab_th_info[th_id].lock));
-					port++;
-					usleep(10);
 				}
 			}
+			scan = 0;
+			port++;
 		}
 		current_host = current_host->next;
 	}

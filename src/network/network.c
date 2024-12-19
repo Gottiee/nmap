@@ -150,7 +150,7 @@ void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 void	init_th_info( t_thread_arg *th_info, t_info *info, pcap_if_t *alldvsp, pcap_t *handle )
 {
 	th_info->handle = init_handler(info->device);
-	th_info->scan_type = info->scan_type;
+	th_info->scan_type = info->scan_type[0];
 	th_info->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	th_info->ip_src = info->ip_src;
 	if (th_info->sockfd == -1)

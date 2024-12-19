@@ -37,6 +37,8 @@ typedef struct s_info t_info;
 #define UDP 5
 #define ALL 6
 
+#define NB_MAX_SCAN 7
+
 #define MAX_SCAN 65535
 #define IPADDR_STRLEN 15
 #define MAX_FILTER_LEN 43
@@ -48,7 +50,7 @@ typedef struct s_info
 	uint16_t	first_port;
 	uint16_t	port_range;
 	int nb_thread;
-	int scan_type;
+	int scan_type[NB_MAX_SCAN];
 	int	nb_host_ping;
 	int	nb_host_ping_success;
 	t_host *start_host;
@@ -59,5 +61,6 @@ typedef struct s_info
 
 //	PRINT.C
 void	super_print( t_host *host, t_info *info );
+void	print_usage( void );
 
 #endif

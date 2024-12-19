@@ -1,5 +1,15 @@
 #include "../inc/nmap.h"
 
+void	print_usage( void )
+{
+	printf("ft_nmap 1.0\n Usage: ./ft_nmap [--scan VALUE1 VALUE2 ... ] [--speedup N] [--ports X/Y] --ip hostname|ip_addr.\n");
+	printf("--scan VAL\t: VAL can be one of these values: SYN, NULL, ACK, FIN, XMAS, UDP.\n\t\t  One or multiple values can be specified.\n");
+	printf("--speedup N\t: N must be a positive number less than 250 included.\n");
+	printf("--ports X/Y\t: X and Y define a range of ports to scan. Y is not required.\n\t\t  Both X and Y must positive number. The range defined has to be less than 1024 long.\n");
+	printf("--ip ip_addr or hostname : is required. ip_addr a IPv4 IP address and hostname is a hostname.\n\t\t\t   Only a single ip address or hostname is required.\n");
+	printf("--file filename\t: filename is a file containing multiple hostnames used as input.\n");
+}
+
 int    ft_nblen(int nb)
 {
     int        len;
@@ -81,7 +91,7 @@ void print_port(t_scan_port *port, t_info *info)
 {
 	uint8_t space_nbr = 6 - ft_nblen(port->nb);
 	printf("%d/", port->nb);
-	if (info->scan_type >= SYN && info->scan_type <= XMAS)
+	if (info->scan_type[0] >= SYN && info->scan_type[0] <= XMAS)
 		printf("tcp");
 	else
 		printf("udp");
@@ -105,7 +115,7 @@ void print_all(t_scan_port *port, t_info *info)
 			print_port(port, info);
 			printf("%s(%s)", str_state, str_type);
 			print_space(space_state);
-			if (info->scan_type >= SYN && info->scan_type <= XMAS)
+			if (info->scan_type[0] >= SYN && info->scan_type[0] <= XMAS)
 				printf("%s\n", return_service_tcp(port->nb));
 			else
 				printf("%s\n", return_service_udp(port->nb));
@@ -117,12 +127,12 @@ void print_all(t_scan_port *port, t_info *info)
 
 void print_line(t_scan_port *port, t_info *info)
 {
-	if (info->scan_type == ALL)
+	if (info->scan_type[0] == ALL)
 	{
 		print_all(port, info);
 		return;
 	}
-	int state = port->state[info->scan_type];
+	int state = port->state[info->scan_type[0]];
 	if (state != OPEN && state != OPEN_FILT)
 		return;
 	print_port(port, info);
@@ -131,7 +141,7 @@ void print_line(t_scan_port *port, t_info *info)
 
 	printf("%s", str_state);
 	print_space(space_state);
-	if (info->scan_type >= SYN && info->scan_type <= XMAS)
+	if (info->scan_type[0] >= SYN && info->scan_type[0] <= XMAS)
 		printf("%s\n", return_service_tcp(port->nb));
 	else
 		printf("%s\n", return_service_udp(port->nb));
@@ -145,7 +155,7 @@ void	super_print( t_host *host, t_info *info )
 	printf("Nbr of Ports to scan: %d\n", info->port_range);
 	printf("Nbr of threads: %d\n", info->nb_thread);
 	printf("Scans to be performed: ");
-	char *scan = return_str_type(info->scan_type);
+	char *scan = return_str_type(info->scan_type[0]);
 	printf("%s\n\n", scan);
 
 	while (host != NULL)

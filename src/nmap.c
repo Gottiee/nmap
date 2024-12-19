@@ -4,7 +4,8 @@ void	init_values( t_info *info )
 {
 	info->hostnames = NULL;
 	info->nb_thread = 0;
-	info->scan_type = ALL;
+	memset(info->scan_type, -1, sizeof(int) * NB_MAX_SCAN);
+	info->scan_type[0] = ALL;
 	info->nb_host_ping = 0;
 	info->nb_host_ping_success = 0;
 
@@ -72,6 +73,12 @@ int main( int argc, char **argv )
 	if (info.hostnames == NULL)
 		exit (2);
 
+	printf("range == %d | first_port == %d\n", info.port_range, info.first_port);
+	for (uint8_t i  = 0; i < NB_MAX_SCAN; i++)
+	{
+		printf("scan[%d] == %d\n", i, info.scan_type[i]);
+	}
+	// return (0);
 	ping_and_scan(&info);
 	
 	super_print(info.start_host, &info);
