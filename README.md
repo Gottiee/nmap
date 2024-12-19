@@ -106,8 +106,5 @@ char *return_string()
     - multi thread
         - ne scan pas tout les host
 
-- printing
-- afficher tout les ports si `port_range < 25`
-
 - network
 - udp

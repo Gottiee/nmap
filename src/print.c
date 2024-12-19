@@ -46,11 +46,14 @@ char *return_str_state(int state)
 	case CLOSE_FILT:
 		return "close/filtered";
 		break;
+	case UNFILTERED:
+		return "unfiltered";
+		break;
 	default:
-		return "";
+		return "unknow";
 		break;
 	}
-	return "";
+	return "unknow";
 }
 
 char *return_str_type(int type)
@@ -98,53 +101,38 @@ void print_port(t_scan_port *port, t_info *info)
 	print_space(space_nbr);
 }
 
-void print_all(t_scan_port *port, t_info *info)
+void print_line(t_scan_port *port, t_info *info)
 {
 	int state = 0;
+	int first_print = true;
+	int scan_type = 0;
 
-	for (int i = 0; i <= UDP; i++)
+	for (int i = 0; i < NB_MAX_SCAN; i++)
 	{
-		state = port->state[i];
-		if (state != OPEN && state != OPEN_FILT)
+		scan_type = info->scan_type[i];
+		state = port->state[scan_type];
+		// printf("state = %d for scan_type[i = %d] =  %d\n", state, i, scan_type);
+		if (scan_type == -1)
+			continue;
+		if (state != OPEN && state != OPEN_FILT && info->port_range > 10)
 			continue;
 		char *str_state = return_str_state(state);
-		char *str_type = return_str_type(i);
+		char *str_type = return_str_type(scan_type);
 		uint8_t space_state = 19 - strlen(str_state) - 2 - strlen(str_type);
-		if (i == 0)
+		if (first_print)
 		{
 			print_port(port, info);
 			printf("%s(%s)", str_state, str_type);
 			print_space(space_state);
-			if (info->scan_type[0] >= SYN && info->scan_type[0] <= XMAS)
+			if (scan_type >= SYN && scan_type <= XMAS)
 				printf("%s\n", return_service_tcp(port->nb));
 			else
 				printf("%s\n", return_service_udp(port->nb));
+			first_print = false;
 		}
 		else
 			printf("          %s(%s)\n", str_state, str_type);
 	}
-}
-
-void print_line(t_scan_port *port, t_info *info)
-{
-	if (info->scan_type[0] == ALL)
-	{
-		print_all(port, info);
-		return;
-	}
-	int state = port->state[info->scan_type[0]];
-	if (state != OPEN && state != OPEN_FILT)
-		return;
-	print_port(port, info);
-	char *str_state = return_str_state(state);
-	uint8_t space_state = 19 - strlen(str_state);
-
-	printf("%s", str_state);
-	print_space(space_state);
-	if (info->scan_type[0] >= SYN && info->scan_type[0] <= XMAS)
-		printf("%s\n", return_service_tcp(port->nb));
-	else
-		printf("%s\n", return_service_udp(port->nb));
 }
 
 void	super_print( t_host *host, t_info *info )
@@ -155,17 +143,25 @@ void	super_print( t_host *host, t_info *info )
 	printf("Nbr of Ports to scan: %d\n", info->port_range);
 	printf("Nbr of threads: %d\n", info->nb_thread);
 	printf("Scans to be performed: ");
-	char *scan = return_str_type(info->scan_type[0]);
-	printf("%s\n\n", scan);
+	char *scan;
+	for (int scan_type = 0; scan_type < NB_MAX_SCAN; scan_type++)
+	{
+		if (info->scan_type[scan_type] != -1)
+		{
+			scan = return_str_type(info->scan_type[scan_type]);
+			printf("%s ", scan);
+		}
+	}
+	printf("\n\n");
 
 	while (host != NULL)
 	{
 		printf("HOST: %s\n", host->name);
 		printf("Host is up\n");
 		int not_open = info->port_range - host->open;
-		if (not_open != 0)
+		if (not_open != 0 && info->port_range > 10)
 			printf("Not shown: %d tcp ports\n", not_open);
-		if (not_open != info->port_range)
+		if (not_open != info->port_range || info->port_range <= 10)
 			printf("PORT      STATE              SERVICE\n");
 		for (uint16_t i = 0; i < info->port_range; i++)
 			print_line(&host->port_tab[i], info);
