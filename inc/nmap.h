@@ -37,7 +37,7 @@ typedef struct s_info t_info;
 #define UDP 5
 #define ALL 6
 
-#define NB_MAX_SCAN 7
+#define NB_MAX_SCAN 6
 
 #define MAX_SCAN 65535
 #define IPADDR_STRLEN 15

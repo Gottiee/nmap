@@ -4,8 +4,10 @@ void	init_values( t_info *info )
 {
 	info->hostnames = NULL;
 	info->nb_thread = 0;
-	memset(info->scan_type, -1, sizeof(int) * NB_MAX_SCAN);
-	info->scan_type[0] = ALL;
+	for (uint8_t i = 0; i < NB_MAX_SCAN; i++)
+	{
+		info->scan_type[i] = i;
+	}
 	info->nb_host_ping = 0;
 	info->nb_host_ping_success = 0;
 

@@ -26,6 +26,10 @@ bool	define_scan( char ***argv, t_info *info )
 	++(*argv);
 	if (*argv == NULL || **argv == NULL || ***argv == '-' || ***argv == '\0')
 		return (return_error("Format error: scan: no value"));
+	for (uint8_t i = 0; i < NB_MAX_SCAN; i++)
+	{
+		info->scan_type[i] = -1;
+	}
 	while ((*argv) != NULL && **argv != NULL && ***argv != '-')
 	{
 		for (i = 0; **argv != NULL && argv_list[i] != NULL; i++)
@@ -54,7 +58,10 @@ bool	define_scan( char ***argv, t_info *info )
 				info->scan_type[nb_scan] = UDP;
 				break ;
 			case 6:
-				info->scan_type[nb_scan] = ALL;
+				for (uint8_t i = 0; i < NB_MAX_SCAN; i++)
+				{
+					info->scan_type[i] = i;
+				}
 				break ;
 			default:
 				return (parsing_return_error("Format error: scan: must be within this list -> SYN, NULL, ACK, FIN, XMAS, UDP"));

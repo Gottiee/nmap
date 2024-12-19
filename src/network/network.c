@@ -183,7 +183,11 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host, pcap_t *han
 	
 	for (; port < last_port; port++)
 	{
-		host->port_tab[port - info->first_port].nb = port;
-		scan_switch(&host->port_tab[port - info->first_port], &th_info);
+		for (uint8_t scan = 0; scan < NB_MAX_SCAN && info->scan_type[scan] != -1; scan++)	// run through scan types
+		{
+			host->port_tab[port - info->first_port].nb = port;
+			th_info.scan_type = info->scan_type[scan];
+			scan_switch(&host->port_tab[port - info->first_port], &th_info);
+		}
 	}
 }
