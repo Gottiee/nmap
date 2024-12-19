@@ -205,6 +205,8 @@ void threading_scan_port(t_info *info, t_host *current_host)
 						pthread_cond_signal(&tab_th_info[th_id].cond);
 						pthread_mutex_unlock(&(tab_th_info[th_id].lock));
 						scan++;
+						if (scan > NB_MAX_SCAN || info->scan_type[scan] == -1)
+							break;
 						usleep(10);
 					}
 				}

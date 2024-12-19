@@ -44,9 +44,10 @@ void	init_ip_h( struct iphdr *iph, const t_thread_arg *th_info )
 	iph->daddr = th_info->host->ping_addr.sin_addr.s_addr;
 }
 
-void	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const uint8_t scan_type )
+uint16_t	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const uint8_t scan_type )
 {
-	tcph->source = htons(get_random_port());
+	uint16_t random_src_port = get_random_port();
+	tcph->source = htons(random_src_port);
 	tcph->dest = htons(port_nb);
 	tcph->doff = 5;
 	switch (scan_type)
@@ -69,6 +70,7 @@ void	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const uint8_t scan
 			break ;
 	}
 	tcph->window = htons(5840);
+	return random_src_port;
 }
 
 void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096], struct pollfd *pollfd, const t_thread_arg *th_info, t_scan_port *port )
@@ -78,7 +80,7 @@ void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096],
 	srand(time(NULL));
 	init_ip_h(iph, th_info);
 	iph->check = checksum((unsigned short *)packet, iph->tot_len);
-	init_tcp_h(tcph, port->nb, th_info->scan_type);
+	uint16_t random_src_port =  init_tcp_h(tcph, port->nb, th_info->scan_type);
 	tcph->check = get_checksum(th_info, tcph);
 	if (th_info->scan_type == S_NULL || th_info->scan_type == FIN || th_info->scan_type == XMAS)
 		port->state[th_info->scan_type] = UNFILTERED;
@@ -90,8 +92,7 @@ void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096],
 	if (pollfd->fd == -1)
 		fatal_perror("ft_nmap: pcap_get_selectable_fd");
 
-	// sprintf(filter_str, "src host %s and (tcp or icmp)", inet_ntoa(th_info->host.ping_addr.sin_addr));
-	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d", inet_ntoa(th_info->host->ping_addr.sin_addr), port->nb);
+	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d and dst port %d", inet_ntoa(th_info->host->ping_addr.sin_addr), port->nb, random_src_port);
 	setup_filter(filter_str, th_info->handle);
 
 }

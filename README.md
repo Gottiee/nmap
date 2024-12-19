@@ -101,10 +101,9 @@ char *return_string()
 - pasing
 - ip + file options together ? 
 
-- thread:
 - file
     - multi thread
-        - ne scan pas tout les host
+        - ne scan pas tout les host ( le problem existe toujours)
 
 - network
 - udp
