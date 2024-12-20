@@ -286,7 +286,10 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 					return (error_handling(&hostnames));
 				break ;
 			case 3:
-				hostnames = init_hostnames(1, argv);
+				if (hostnames == NULL)
+					hostnames = init_hostnames(1, argv);
+				else
+					*argv += 1;
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
 				break ;

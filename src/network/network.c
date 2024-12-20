@@ -91,6 +91,61 @@ pcap_if_t *init_device(t_info *info)
 	return alldvsp;
 }
 
+void	init_ip_h( struct iphdr *iph, const t_thread_arg *th_info, const uint8_t protocol )
+{
+	iph->ihl = 5;
+	iph->version = IPVERSION;
+	if (protocol == IPPROTO_TCP)
+		iph->tot_len = sizeof(struct iphdr) + sizeof(struct tcphdr);
+	if (protocol == IPPROTO_UDP)
+		iph->tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + UDP_PAYLOAD_SIZE;
+	iph->id = htonl(syscall(SYS_gettid));
+	iph->ttl = 64;
+	iph->protocol = protocol;
+	iph->saddr = th_info->ip_src.s_addr;
+	iph->daddr = th_info->host->ping_addr.sin_addr.s_addr;
+}
+
+uint16_t	get_checksum( const t_thread_arg *th_info, void *header, const uint8_t protocol )
+{
+	t_pseudo_hdr	psh = {0};
+	char	pseudogram_tcp[sizeof(t_pseudo_hdr) + sizeof(struct tcphdr)] = {0};
+	char	pseudogram_udp[sizeof(t_pseudo_hdr) + sizeof(struct udphdr) + UDP_PAYLOAD_SIZE] = {0};
+	struct tcphdr	*tcph = NULL;
+	struct udphdr	*udph = NULL;
+
+	if (protocol == IPPROTO_TCP)
+		tcph = header;
+	else if (protocol == IPPROTO_UDP)
+		udph = header;
+	
+
+	psh.source_address = th_info->ip_src.s_addr;  // Adresse source
+	psh.dest_address = th_info->host->ping_addr.sin_addr.s_addr;  // Adresse de destination
+	psh.placeholder = 0;
+	psh.protocol = protocol;
+
+	if (protocol == IPPROTO_TCP)
+		psh.tcp_length = htons(sizeof(struct tcphdr));
+	if (protocol == IPPROTO_UDP)
+		psh.tcp_length = htons(sizeof(struct udphdr) + UDP_PAYLOAD_SIZE);
+
+	if (protocol == IPPROTO_TCP)
+	{
+		memcpy(pseudogram_tcp, (char *)&psh, sizeof(t_pseudo_hdr));
+		memcpy(pseudogram_tcp + sizeof(t_pseudo_hdr), tcph, sizeof(struct tcphdr));
+		return(checksum((unsigned short *)pseudogram_tcp, sizeof(t_pseudo_hdr) + sizeof(struct tcphdr)));
+	}
+	else if (protocol == IPPROTO_UDP)
+	{
+		memcpy(pseudogram_udp, (char *)&psh, sizeof(t_pseudo_hdr));
+		memcpy(pseudogram_udp + sizeof(t_pseudo_hdr), udph, sizeof(struct udphdr) + UDP_PAYLOAD_SIZE);
+		return(checksum((unsigned short *)pseudogram_udp, sizeof(t_pseudo_hdr) + sizeof(struct udphdr) + UDP_PAYLOAD_SIZE));
+	}
+	
+	return (0);
+}
+
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 {
 	(void)input_domain;
@@ -105,6 +160,52 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 	ping_addr->sin_addr = ((struct sockaddr_in *)res->ai_addr)->sin_addr;
 	freeaddrinfo(res);
 	return (1);
+}
+
+void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd pollfd, char packet[4096], struct iphdr *iph )
+{
+	uint8_t	retry = 0;
+	int		ret_val = 0;
+	const u_char	*r_data = NULL;
+	struct pcap_pkthdr	*pkt_h = NULL;
+
+	for (; retry < 2; retry++)
+	{
+		if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 
+			(struct sockaddr *)&(th_info->host->ping_addr), sizeof(struct sockaddr)) == -1)
+			fatal_perror("ft_nmap: syn: sendto()");
+
+	arm_poll:
+		ret_val = poll(&pollfd, 1, 400);
+		if (ret_val == -1)
+			fatal_perror("ft_nmap: poll");
+		else if (ret_val == 0)
+		{
+			printf(RED "(%d)>>> poll(%d) TO\n" RESET, th_info->id, port->nb);
+			continue ;
+		}
+		else if (ret_val >= 0 && pollfd.revents & POLLIN)
+		{
+			ret_val = pcap_next_ex(th_info->handle, &pkt_h, &r_data);
+			if (ret_val == 1)
+			{
+				pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
+				handle_return_packet(r_data, port, th_info->id, th_info->scan_type, th_info->host);
+				break ;
+			}
+			else if (ret_val == 0)
+			{
+				printf("(%d) >>> pcap_next(%d): timed out\n", th_info->id, port->nb);
+				goto arm_poll;
+			}
+			else 
+				fatal_error_str("ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
+		}
+		else
+		{
+			pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == %d\n", th_info->id, ret_val);pthread_mutex_unlock(&g_print_lock);
+		}
+	}
 }
 
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr) 
