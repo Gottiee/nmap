@@ -44,6 +44,8 @@ typedef struct s_info t_info;
 #define MAX_FILTER_LEN 43
 #define INTERFACE_MAX_LEN 15
 
+extern t_info *g_info;
+
 typedef struct	s_opt
 {
 	bool	ping;

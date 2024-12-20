@@ -282,8 +282,8 @@ bool	define_ttl( char ***argv, t_info *info )
 	if (i == 0)
 		return (return_error("Format error: ttl: no value"));
 	info->options.ttl = atoi(**argv);
-	if (info->options.ttl > 255)
-		return (return_error("Format error: ttl: value must a positive number less than 250"));
+	if (info->options.ttl == 0 ||  info->options.ttl > 255)
+		return (return_error("Format error: ttl: value must a strictly positive number less than 250"));
 	return(0);
 }
 

@@ -181,7 +181,6 @@ void threading_scan_port(t_info *info, t_host *current_host)
 
 	while (current_host != NULL)
 	{
-		printf(YELLOW "Current host -> %s\n" RESET, current_host->name);
 		while (port < last_port)																// run through ports
 		{
 			while (scan < NB_MAX_SCAN && info->scan_type[scan] != -1)	// run through scan types

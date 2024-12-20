@@ -98,13 +98,16 @@ char *return_string()
 - free les malloc / la list chainee dans le fatalerror/ perror
 - valrind
 
+-parsing
+	- nb_retries false opt non detectee
+
 - passer info en global
 - options dans info
 
 
 Options:
--Pn : enlever le ping
+-Pn : enlever le ping x
 -iR <nbr>: choose random target
---max-retries <nbr>: Caps number of port scan probe retransmissions.
+--max-retries <nbr>: Caps number of port scan proberetransmissions. x
 -e <iface>:  Use specified interface
---ttl <val>: Set IP time-to-live field
+--ttl <val>: Set IP time-to-live field x

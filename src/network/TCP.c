@@ -71,8 +71,6 @@ void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096],
 
 void scan_tcp( t_scan_port *port, t_thread_arg *th_info )
 {
-	// pthread_mutex_lock(&g_print_lock);printf("(%d) scan_syn(): port_nb(%p) = %d | ping_addr == %s\n", th_info->id, &(port->nb), port->nb, inet_ntoa(th_info->host.ping_addr.sin_addr));pthread_mutex_unlock(&g_print_lock);
-
 	struct pollfd	pollfd = {0};
 	char packet[4096] = {0};
 	struct iphdr *iph = (struct iphdr *) packet;
@@ -81,6 +79,4 @@ void scan_tcp( t_scan_port *port, t_thread_arg *th_info )
 	init_values_tcp(iph, tcph, packet, &pollfd, th_info, port);
 
 	send_recv_packet(port, th_info, pollfd, packet, iph);
-
-	printf(YELLOW "(%d) Scan == %d | port == %d\n", th_info->id, th_info->scan_type, port->nb);
 }

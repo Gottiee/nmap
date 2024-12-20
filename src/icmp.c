@@ -26,7 +26,7 @@ int socket_creation()
 
 void init_icmp_data(t_icmp_data *data, struct sockaddr_in *ping_address)
 {
-    data->ttl = 64;
+    data->ttl = g_info->options.ttl;
     data->sockfd = socket_creation();
     if (data->sockfd == -1)
         fatal_error("ft_nmap: Lacking privilege for icmp socket.\n");

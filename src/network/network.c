@@ -37,14 +37,17 @@ pcap_t *init_handler(char *device)
 	// handle = pcap_open_live("enp0s3", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
 	// if (!handle)
 	// 	fatal_error_str("%s\n", error_buffer);
-	handle = pcap_create("any", error_buffer);
+	if (g_info->options.interface != NULL)
+		handle = pcap_create(g_info->options.interface, error_buffer);
+	else
+		handle = pcap_create("any", error_buffer);
 	if (handle == NULL)
-		fatal_error("pcap_create()");
-	 if (pcap_set_snaplen(handle, 100) != 0) {
+		fatal_error_str("pcap_create()", error_buffer);
+	if (pcap_set_snaplen(handle, 100) != 0){
 		fatal_error("pcap_create()");
     }
     if (pcap_set_immediate_mode(handle, 1) != 0) {
-		fatal_error("pcap_immeiatrjfhwae_mode()");
+		fatal_error("pcap_immediate_mode()");
     }
     if (pcap_set_timeout(handle, 500) != 0) {
 		fatal_error("pcap_timeout()");
@@ -56,7 +59,7 @@ pcap_t *init_handler(char *device)
 		fatal_error("pcap_set_promisc()");
     }
     if (pcap_activate(handle) != 0) {
-		fatal_error("pcap_activate()");
+		fatal_error_str("Quitting!\n Unknown interface: ", g_info->options.interface);
     }
     if (pcap_datalink(handle) != DLT_LINUX_SLL) {
 		fatal_error("pcap_datalink()");
@@ -99,7 +102,7 @@ void	init_ip_h( struct iphdr *iph, const t_thread_arg *th_info, const uint8_t pr
 	if (protocol == IPPROTO_UDP)
 		iph->tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + UDP_PAYLOAD_SIZE;
 	iph->id = htonl(syscall(SYS_gettid));
-	iph->ttl = 64;
+	iph->ttl = g_info->options.ttl;
 	iph->protocol = protocol;
 	iph->saddr = th_info->ip_src.s_addr;
 	iph->daddr = th_info->host->ping_addr.sin_addr.s_addr;
@@ -168,7 +171,7 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 	const u_char	*r_data = NULL;
 	struct pcap_pkthdr	*pkt_h = NULL;
 
-	for (; retry < 2; retry++)
+	for (; retry < g_info->options.nb_retries; retry++)
 	{
 		if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 
 			(struct sockaddr *)&(th_info->host->ping_addr), sizeof(struct sockaddr)) == -1)

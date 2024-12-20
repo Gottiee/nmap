@@ -1,5 +1,7 @@
 #include "../inc/nmap.h"
 
+t_info *g_info = NULL;
+
 void	init_values( t_info *info )
 {
 	info->hostnames = NULL;
@@ -32,7 +34,10 @@ void ping_and_scan(t_info *info)
 	if (info->nb_thread == 0)
 	{
 		alldvsp = init_device(info);
-		handle = init_handler("any");
+		if (info->options.interface != NULL)
+			handle = init_handler(info->options.interface);
+		else
+			handle = init_handler("any");
 	}
 	for (int i = 0; info->hostnames[i]; i++)
 	{
@@ -43,8 +48,9 @@ void ping_and_scan(t_info *info)
 			continue;
 		}
 		info->nb_host_ping ++;
-		if (!ping_ip(&info->ping_addr))
-			continue;
+		if (info->options.ping)
+			if (!ping_ip(&info->ping_addr))
+				continue;
 		info->nb_host_ping_success ++;
 		
 		if (!start_host)
@@ -74,7 +80,8 @@ void ping_and_scan(t_info *info)
 int main( int argc, char **argv )
 {
     t_info info;
-
+	g_info = &info;
+	
     gettimeofday(&info.time_start, NULL);
 
 	init_values(&info);
