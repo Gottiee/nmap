@@ -101,9 +101,7 @@ char *return_string()
 - pasing
 - ip + file options together ? 
 
-- file
-    - multi thread
-        - ne scan pas tout les host ( le problem existe toujours)
-
 - network
 - udp
+
+- Ne pas oublier d'enlever le unknow dans print.c

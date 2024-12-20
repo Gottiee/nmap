@@ -1,4 +1,2 @@
-hostname
-superhost
-encore
-
+cogiceo.com
+google.com

@@ -167,7 +167,7 @@ void	*scan_routine( void *arg )
 
 void threading_scan_port(t_info *info, t_host *current_host)
 {
-	char	str_filter[49 + 1] = {0};
+	char	str_filter[1024] = {0};
 	uint8_t scan = 0;
 	int last_port = info->first_port + info->port_range;
 	int	port = info->first_port;
@@ -214,6 +214,7 @@ void threading_scan_port(t_info *info, t_host *current_host)
 			scan = 0;
 			port++;
 		}
+		port = info->first_port;
 		current_host = current_host->next;
 	}
 	

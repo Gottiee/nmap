@@ -51,7 +51,10 @@ void ping_and_scan(t_info *info)
 			current_host = start_host;
 		}
 		else
+		{
 			current_host = add_host_list(info->hostnames[i], start_host, info);
+			memcpy(&current_host->ping_addr, &info->ping_addr, sizeof(struct sockaddr_in));
+		}
 		if (info->nb_thread == 0)
 			scan(&info->ping_addr, info, current_host, handle, alldvsp);
 	}
