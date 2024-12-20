@@ -2,12 +2,17 @@
 
 void	print_usage( void )
 {
-	printf("ft_nmap 1.0\n Usage: ./ft_nmap [--scan VALUE1 VALUE2 ... ] [--speedup N] [--ports X/Y] --ip hostname|ip_addr.\n");
+	printf("ft_nmap 1.0\n Usage: ./ft_nmap [--scan VALUE1 VALUE2 ... ] [--speedup N] [--ports X/Y] --ip hostname|ip_addr.\n\n");
 	printf("--scan VAL\t: VAL can be one of these values: SYN, NULL, ACK, FIN, XMAS, UDP.\n\t\t  One or multiple values can be specified.\n");
 	printf("--speedup N\t: N must be a positive number less than 250 included.\n");
 	printf("--ports X/Y\t: X and Y define a range of ports to scan. Y is not required.\n\t\t  Both X and Y must positive number. The range defined has to be less than 1024 long.\n");
-	printf("--ip ip_addr or hostname : is required. ip_addr a IPv4 IP address and hostname is a hostname.\n\t\t\t   Only a single ip address or hostname is required.\n");
 	printf("--file filename\t: filename is a file containing multiple hostnames used as input.\n");
+	printf("--no-ping\t: disable the ping request before the actual scan.\n/");
+	printf("--rand-target\t: send requests to random hosts.\n");
+	printf("--max-tries N\t: Caps number of port scan probe retransmissions.\n");
+	printf("--ttl N\t\t: Set IP time-to-live field.\n");
+	printf("--interface string\t : Use specified interface.\n");
+	printf("--ip ip_addr or hostname : is required. ip_addr a IPv4 IP address and hostname is a hostname.\n\t\t\t   Only a single ip address or hostname is required.\n");
 }
 
 int    ft_nblen(int nb)
@@ -114,7 +119,7 @@ void print_line(t_scan_port *port, t_info *info)
 		// printf("state = %d for scan_type[i = %d] =  %d\n", state, i, scan_type);
 		if (scan_type == -1)
 			continue;
-		if (state != OPEN && state != OPEN_FILT && info->port_range > 10)
+		if (state != OPEN && info->port_range > 10)
 			continue;
 		char *str_state = return_str_state(state);
 		char *str_type = return_str_type(scan_type);
@@ -160,7 +165,7 @@ void	super_print( t_host *host, t_info *info )
 		printf("Host is up\n");
 		int not_open = info->port_range - host->open;
 		if (not_open != 0 && info->port_range > 10)
-			printf("Not shown: %d tcp ports\n", not_open);
+			printf("Not shown: %d ports\n", not_open);
 		if (not_open != info->port_range || info->port_range <= 10)
 			printf("PORT      STATE              SERVICE\n");
 		for (uint16_t i = 0; i < info->port_range; i++)

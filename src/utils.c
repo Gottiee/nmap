@@ -2,7 +2,10 @@
 
 bool	return_error( char *err_mess )
 {
-	perror(err_mess);
+	if (errno != 0)
+		perror(err_mess);
+	else
+		fprintf(stderr, "%s\n", err_mess);
 	return (1);
 }
 

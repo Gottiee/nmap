@@ -97,3 +97,14 @@ char *return_string()
 - memoire
 - free les malloc / la list chainee dans le fatalerror/ perror
 - valrind
+
+- passer info en global
+- options dans info
+
+
+Options:
+-Pn : enlever le ping
+-iR <nbr>: choose random target
+--max-retries <nbr>: Caps number of port scan probe retransmissions.
+-e <iface>:  Use specified interface
+--ttl <val>: Set IP time-to-live field

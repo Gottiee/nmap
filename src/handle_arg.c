@@ -247,10 +247,50 @@ char	**init_hostnames( bool single, char ***argv )
 	return (hostnames);
 }
 
+bool	define_nb_retries( char ***argv, t_info *info )
+{
+	size_t	i = 0;
+	
+	++(*argv);
+	if (**argv == NULL)
+		return (return_error("Format error: max-retries: no value"));
+	for (i = 0; (**argv)[i] != '\0'; i++)
+	{
+		if (isdigit((**argv)[i]) == 0)
+			return (return_error("Format error: max-retries: value must be numeric"));
+	}
+	if (i == 0)
+		return (return_error("Format error: max-retries: no value"));
+	info->options.nb_retries = atoi(**argv);
+	if (info->options.nb_retries > 250)
+		return (return_error("Format error: max-retries: value must a positive number less than 250"));
+	return(0);
+}
+
+bool	define_ttl( char ***argv, t_info *info )
+{
+	size_t	i = 0;
+	
+	++(*argv);
+	if (**argv == NULL)
+		return (return_error("Format error: ttl: no value"));
+	for (i = 0; (**argv)[i] != '\0'; i++)
+	{
+		if (isdigit((**argv)[i]) == 0)
+			return (return_error("Format error: ttl: value must be numeric"));
+	}
+	if (i == 0)
+		return (return_error("Format error: ttl: no value"));
+	info->options.ttl = atoi(**argv);
+	if (info->options.ttl > 255)
+		return (return_error("Format error: ttl: value must a positive number less than 250"));
+	return(0);
+}
+
 char	**handle_arg( int argc, char ***argv, t_info *info )
 {
 	char	**hostnames = NULL;
-	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", NULL};
+	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", "max-retries", "ttl", "no-ping", "rand-target" "interface", NULL};
 	uint8_t	i = 0;
 	unsigned short	port_range[2] = {0};
 
@@ -304,6 +344,24 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 				hostnames = init_hostnames(0, argv);
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
+				break ;
+			case 6:
+				if (define_nb_retries(argv, info) == 1)
+					return (error_handling(&hostnames));
+				break ;
+			case 7:
+				if (define_ttl(argv, info) == 1)
+					return (error_handling(&hostnames));
+				break ;
+			case 8:
+				info->options.ping = false;
+				break ;
+			case 9:
+				info->options.random = true;
+				break ;
+			case 10:
+				info->options.interface = **argv;
+				++(*argv);
 				break ;
 			default:
 				printf("ft_nmap: Unrecognize option '%s'\n", **argv);

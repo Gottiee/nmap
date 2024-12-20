@@ -15,7 +15,6 @@ uint16_t get_random_port( void )
 void setup_filter(char *filter_str, pcap_t *handle)
 {
 	struct bpf_program filter;
-	printf("pcap_filter -> [%s]\n", filter_str);
 	if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
 	{
 		printf("Bad filter: %s\n", filter_str);
@@ -181,7 +180,7 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			fatal_perror("ft_nmap: poll");
 		else if (ret_val == 0)
 		{
-			printf(RED "(%d)>>> poll(%d) TO\n" RESET, th_info->id, port->nb);
+			// printf(RED "(%d)>>> poll(%d) TO\n" RESET, th_info->id, port->nb);
 			continue ;
 		}
 		else if (ret_val >= 0 && pollfd.revents & POLLIN)
@@ -189,7 +188,7 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			ret_val = pcap_next_ex(th_info->handle, &pkt_h, &r_data);
 			if (ret_val == 1)
 			{
-				pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
+				// pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
 				handle_return_packet(r_data, port, th_info->id, th_info->scan_type, th_info->host);
 				break ;
 			}
@@ -200,10 +199,6 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			}
 			else 
 				fatal_error_str("ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
-		}
-		else
-		{
-			pthread_mutex_lock(&g_print_lock);printf("(%d) ret_val == %d\n", th_info->id, ret_val);pthread_mutex_unlock(&g_print_lock);
 		}
 	}
 }
@@ -238,7 +233,6 @@ bool scan_all( t_scan_port *port, t_thread_arg th_info )
 
 void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 {
-	// printf("scan_switch: addr = %s\n", inet_ntoa(host->ping_addr.sin_addr));
 	if (th_info->scan_type <= XMAS)
 		scan_tcp(port, th_info);
 	else if (th_info->scan_type == UDP)

@@ -42,8 +42,18 @@ typedef struct s_info t_info;
 #define MAX_SCAN 65535
 #define IPADDR_STRLEN 15
 #define MAX_FILTER_LEN 43
+#define INTERFACE_MAX_LEN 15
 
-typedef struct s_info
+typedef struct	s_opt
+{
+	bool	ping;
+	bool	random;
+	char	*interface;
+	uint32_t	ttl;
+	int	nb_retries;
+}				t_opt;
+
+typedef struct	s_info
 {
 	char	**hostnames;
 	char	*device;
@@ -54,6 +64,7 @@ typedef struct s_info
 	int	nb_host_ping;
 	int	nb_host_ping_success;
 	t_host *start_host;
+	t_opt	options;
 	struct timeval time_start;
 	struct sockaddr_in	ping_addr;
 	struct in_addr	ip_src;
