@@ -7,7 +7,7 @@ void	print_usage( void )
 	printf("--speedup N\t: N must be a positive number less than 250 included.\n");
 	printf("--ports X/Y\t: X and Y define a range of ports to scan. Y is not required.\n\t\t  Both X and Y must positive number. The range defined has to be less than 1024 long.\n");
 	printf("--file filename\t: filename is a file containing multiple hostnames used as input.\n");
-	printf("--no-ping\t: disable the ping request before the actual scan.\n/");
+	printf("--no-ping\t: disable the ping request before the actual scan.\n");
 	printf("--rand-target\t: send requests to random hosts.\n");
 	printf("--max-tries N\t: Caps number of port scan probe retransmissions.\n");
 	printf("--ttl N\t\t: Set IP time-to-live field.\n");

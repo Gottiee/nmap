@@ -22,6 +22,7 @@ bool	define_scan( char ***argv, t_info *info )
 	uint8_t	i = 0;
 	uint8_t	nb_scan = 0;
 	char *argv_list[8] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", "ALL", NULL};
+	errno = 0;
 
 	++(*argv);
 	if (*argv == NULL || **argv == NULL || ***argv == '-' || ***argv == '\0')
@@ -78,6 +79,7 @@ bool	get_port_number( unsigned short (*port_range)[2], char *argv, bool first )
 	char	s[6] = {0};
 	char	sep = 0;
 	sep = (first == 1 ? '/' : '\0');
+	errno = 0;
 
 	if (argv == NULL || *argv == '\0')
 		return (return_error("Format error: port: missing port number"));
@@ -101,6 +103,7 @@ bool	define_ports( unsigned short (*port_range)[2], char *argv )
 {
 	char	*sep = NULL;
 	size_t	len = 0;
+	errno = 0;
 
 	if (argv == NULL)
 		return (return_error("Format error: port: no value"));
@@ -128,6 +131,7 @@ bool	define_ports( unsigned short (*port_range)[2], char *argv )
 bool	init_nb_threads( char ***argv, t_info *info )
 {
 	size_t	i = 0;
+	errno = 0;
 	
 	++(*argv);
 	if (**argv == NULL)
@@ -148,6 +152,7 @@ bool	init_nb_threads( char ***argv, t_info *info )
 char	**init_single_hostname( char ***argv )
 {
 	char	**hostnames = NULL;
+	errno = 0;
 
 	hostnames = calloc(2, sizeof(char *));
 	if (hostnames == NULL)
@@ -199,6 +204,7 @@ char	**init_multiple_hostnames( char ***argv )
 		perror("ft_nmap: calloc buf getline");
 		return (NULL);
 	}
+	errno = 0;
 
 	while (getline(&buf, &len_buf, fd) != -1)
 	{
@@ -238,6 +244,7 @@ char	**init_multiple_hostnames( char ***argv )
 char	**init_hostnames( bool single, char ***argv )
 {
 	char	**hostnames = NULL;
+	errno = 0;
 
 	++(*argv);
 	if (single)
@@ -250,6 +257,7 @@ char	**init_hostnames( bool single, char ***argv )
 bool	define_nb_retries( char ***argv, t_info *info )
 {
 	size_t	i = 0;
+	errno = 0;
 	
 	++(*argv);
 	if (**argv == NULL)
@@ -264,12 +272,15 @@ bool	define_nb_retries( char ***argv, t_info *info )
 	info->options.nb_retries = atoi(**argv);
 	if (info->options.nb_retries > 250)
 		return (return_error("Format error: max-retries: value must a positive number less than 250"));
+	else if (info->options.nb_retries == 0)
+		info->options.nb_retries = 1;	
 	return(0);
 }
 
 bool	define_ttl( char ***argv, t_info *info )
 {
 	size_t	i = 0;
+	errno = 0;
 	
 	++(*argv);
 	if (**argv == NULL)
