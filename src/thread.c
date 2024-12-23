@@ -130,6 +130,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 			pcap_freealldevs(alldevsp);
 			fatal_perror("ft_nmap: init_threads: mutex init");
 		}
+		printf("creating thread %d... \n", i);
 		if (pthread_create(&(threads[i]), NULL, &scan_routine, &(tab_th_info[i])) != 0)
 		{
 			close(tab_th_info[i].sockfd);
@@ -149,12 +150,12 @@ void	*scan_routine( void *arg )
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
 
 	pthread_mutex_lock(&(th_info->lock));
-
 	while (check_g_done() == 0)
 	{
 		th_info->data_ready = 0;
 		while (check_g_done() == 0 && th_info->data_ready == 0)
 		{
+			pthread_mutex_lock(&g_print_lock);printf("(%d) cond_wait\n", th_info->id);pthread_mutex_unlock(&g_print_lock);
 			pthread_cond_wait(&th_info->cond, &(th_info->lock));
 		}
 		if (check_g_done() == 1 && th_info->data_ready == 0)
@@ -188,8 +189,10 @@ void threading_scan_port(t_info *info, t_host *current_host)
 				for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)	// run through threads
 				{
 					// printf("current scan == %d\n", info->scan_type[scan]);
+					pthread_mutex_lock(&g_print_lock);printf("(main) trylock %d\n", th_id);pthread_mutex_unlock(&g_print_lock);
 					if (pthread_mutex_trylock(&(tab_th_info[th_id].lock)) == 0)
 					{
+						pthread_mutex_lock(&g_print_lock);printf("(main) locked %d\n", th_id);pthread_mutex_unlock(&g_print_lock);
 						if (tab_th_info[th_id].data_ready == 1)
 						{
 							pthread_mutex_unlock(&(tab_th_info[th_id].lock));
@@ -206,7 +209,8 @@ void threading_scan_port(t_info *info, t_host *current_host)
 						scan++;
 						if (scan > NB_MAX_SCAN || info->scan_type[scan] == -1)
 							break;
-						usleep(10);
+						// usleep(10);
+						sleep(1);
 					}
 				}
 			}

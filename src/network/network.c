@@ -288,4 +288,5 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host, pcap_t *han
 			scan_switch(&host->port_tab[port - info->first_port], &th_info);
 		}
 	}
+	pcap_close(th_info.handle);
 }

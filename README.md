@@ -99,7 +99,7 @@ char *return_string()
 - valrind
 
 -parsing
-	- nb_retries false opt non detectee
+
 
 - passer info en global
 - options dans info

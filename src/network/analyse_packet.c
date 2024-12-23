@@ -46,7 +46,6 @@ void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 			else
 				port->state[scan_type] = CLOSE; 
 		}
-		printf("\n");
 	}
 	else
 		port->state[scan_type] = CLOSE;

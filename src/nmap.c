@@ -36,8 +36,8 @@ void ping_and_scan(t_info *info)
 		alldvsp = init_device(info);
 		if (info->options.interface != NULL)
 			handle = init_handler(info->options.interface);
-		else
-			handle = init_handler("any");
+		// else
+		// 	handle = init_handler("any");
 	}
 	for (int i = 0; info->hostnames[i]; i++)
 	{
@@ -73,7 +73,7 @@ void ping_and_scan(t_info *info)
 	else
 	{
 		pcap_freealldevs(alldvsp);
-		pcap_close(handle);
+		// pcap_close(handle);
 	}
 }
 
