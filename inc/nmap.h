@@ -45,6 +45,8 @@ typedef struct s_info t_info;
 #define INTERFACE_MAX_LEN 15
 
 extern t_info *g_info;
+extern bool	g_done;
+extern pthread_mutex_t	g_lock;
 
 typedef struct	s_opt
 {
@@ -67,6 +69,7 @@ typedef struct	s_info
 	int	nb_host_ping_success;
 	t_host *start_host;
 	t_opt	options;
+	pcap_if_t	*alldvsp;
 	struct timeval time_start;
 	struct sockaddr_in	ping_addr;
 	struct in_addr	ip_src;

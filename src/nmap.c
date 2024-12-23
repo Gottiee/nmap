@@ -28,16 +28,12 @@ void ping_and_scan(t_info *info)
 {
 	t_host *start_host = NULL;
 	t_host *current_host = NULL;
-	pcap_if_t *alldvsp = NULL;
-	pcap_t *handle = NULL;
 
 	if (info->nb_thread == 0)
 	{
-		alldvsp = init_device(info);
-		if (info->options.interface != NULL)
-			handle = init_handler(info->options.interface);
-		// else
-		// 	handle = init_handler("any");
+		info->alldvsp = init_device(info);
+		// if (info->options.interface != NULL)
+		// 	handle = init_handler();
 	}
 	for (int i = 0; info->hostnames[i]; i++)
 	{
@@ -50,7 +46,7 @@ void ping_and_scan(t_info *info)
 		info->nb_host_ping ++;
 		if (info->options.ping)
 			if (!ping_ip(&info->ping_addr))
-				continue;
+				continue; 
 		info->nb_host_ping_success ++;
 		
 		if (!start_host)
@@ -66,20 +62,17 @@ void ping_and_scan(t_info *info)
 			memcpy(&current_host->ping_addr, &info->ping_addr, sizeof(struct sockaddr_in));
 		}
 		if (info->nb_thread == 0)
-			scan(&info->ping_addr, info, current_host, handle, alldvsp);
+			scan(&info->ping_addr, info, current_host);
 	}
 	if (info->nb_thread > 0)
 		threading_scan_port(info, start_host);
 	else
-	{
-		pcap_freealldevs(alldvsp);
-		// pcap_close(handle);
-	}
+		pcap_freealldevs(info->alldvsp);
 }
 
 int main( int argc, char **argv )
 {
-    t_info info;
+    t_info info = {0};
 	g_info = &info;
 	
     gettimeofday(&info.time_start, NULL);

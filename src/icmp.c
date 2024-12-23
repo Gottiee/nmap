@@ -58,7 +58,7 @@ void send_ping(t_icmp_data *data)
 
 void setup_socket(t_icmp_data *data)
 {
-    struct timeval tv_out;
+    struct timeval tv_out; (void) tv_out;
     tv_out.tv_sec = data->recv_timeout;
     tv_out.tv_usec = 0;
     

@@ -60,3 +60,13 @@ void free_host_list(t_host *start)
         free(tmp);
     }
 }
+
+void	free_host_tab_str( char **hostnames )
+{
+	if (hostnames == NULL)
+		return ;
+
+	for (size_t i = 0; hostnames[i] != NULL; i++)
+		free(hostnames[i]);
+	free(hostnames);
+}

@@ -21,22 +21,25 @@ void setup_filter(char *filter_str, pcap_t *handle)
 		fatal_error_str("Bad filter: %s\n", pcap_geterr(handle));
 	}
 	// sprintf(str_filter, "src host %s and (tcp or icmp)", ip_buf);
-	if (pcap_setfilter(handle, &filter) == -1)
-		fatal_error_str("Error setting filters: %s\n", pcap_geterr(handle));
+	// if (pcap_setfilter(handle, &filter) == -1)
+	if (1)
+	{
+		pthread_mutex_lock(&g_lock);
+		g_done = 1;
+		pthread_mutex_unlock(&g_lock);
+		char	str_err[PCAP_ERRBUF_SIZE] = {0};
+		sprintf(str_err, "Error setting filters: %s\n", pcap_geterr(handle));
+		pcap_close(handle);
+		fatal_error(str_err);
+	}
 	pcap_freecode(&filter);
 }
 
-pcap_t *init_handler(char *device)
+pcap_t *init_handler( void  )
 {
 	pcap_t *handle;
-	// int packet_count_limit = 1;
-	// int timeout_limit = 10000; /* In milliseconds */
 	char error_buffer[PCAP_ERRBUF_SIZE];
 
-	(void) device;
-	// handle = pcap_open_live("enp0s3", BUFSIZ, packet_count_limit, timeout_limit, error_buffer);
-	// if (!handle)
-	// 	fatal_error_str("%s\n", error_buffer);
 	if (g_info->options.interface != NULL)
 		handle = pcap_create(g_info->options.interface, error_buffer);
 	else
@@ -69,8 +72,8 @@ pcap_t *init_handler(char *device)
 
 pcap_if_t *init_device(t_info *info)
 {
-	char error_buffer[PCAP_ERRBUF_SIZE];
-	pcap_if_t *alldvsp = NULL;
+	char error_buffer[PCAP_ERRBUF_SIZE]; (void) error_buffer;
+	pcap_if_t *alldvsp = info->alldvsp;
 	pcap_addr_t *dev_addr;
 
 	if (pcap_findalldevs(&alldvsp, error_buffer) == -1)
@@ -166,6 +169,7 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 
 void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd pollfd, char packet[4096], struct iphdr *iph )
 {
+	(void)packet;(void) iph;
 	uint8_t	retry = 0;
 	int		ret_val = 0;
 	const u_char	*r_data = NULL;
@@ -175,12 +179,18 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 	{
 		if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 
 			(struct sockaddr *)&(th_info->host->ping_addr), sizeof(struct sockaddr)) == -1)
+		{
+			pcap_close(th_info->handle);
 			fatal_perror("ft_nmap: syn: sendto()");
+		}
 
 	arm_poll:
 		ret_val = poll(&pollfd, 1, 400);
 		if (ret_val == -1)
+		{
+			pcap_close(th_info->handle);
 			fatal_perror("ft_nmap: poll");
+		}
 		else if (ret_val == 0)
 		{
 			// printf(RED "(%d)>>> poll(%d) TO\n" RESET, th_info->id, port->nb);
@@ -201,7 +211,12 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 				goto arm_poll;
 			}
 			else 
-				fatal_error_str("ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
+			{
+				char	err_str[PCAP_ERRBUF_SIZE] = {0};
+				sprintf(err_str, "ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
+				pcap_close(th_info->handle);
+				fatal_error(err_str);
+			}
 		}
 	}
 }
@@ -245,16 +260,15 @@ void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 }
 
 
-void	init_th_info( t_thread_arg *th_info, t_info *info, pcap_if_t *alldvsp, pcap_t *handle )
+void	init_th_info( t_thread_arg *th_info, t_info *info )
 {
-	th_info->handle = init_handler(info->device);
+	th_info->handle = init_handler();
 	th_info->scan_type = info->scan_type[0];
-	th_info->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	th_info->ip_src = info->ip_src;
+	th_info->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	if (th_info->sockfd == -1)
 	{
-		pcap_freealldevs(alldvsp);
-		pcap_close(handle);
+		pcap_close(th_info->handle);
 		fatal_perror("ft_nmap: socket");
 	}
 	struct timeval timeout;
@@ -262,19 +276,18 @@ void	init_th_info( t_thread_arg *th_info, t_info *info, pcap_if_t *alldvsp, pcap
 	timeout.tv_usec = 0;
 	if (setsockopt(th_info->sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
 	{
-		pcap_freealldevs(alldvsp);
-		pcap_close(handle);
+		pcap_close(th_info->handle);
 		fatal_perror("ft_nmap: setsockopt");
 	}
 }
 
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host, pcap_t *handle, pcap_if_t *alldvsp)
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 {
 	uint16_t	port = info->first_port;
 	uint16_t	last_port = info->first_port + info->port_range;
 	t_thread_arg	th_info = {0};
 
-	init_th_info(&th_info, info, alldvsp, handle);
+	init_th_info(&th_info, info);
 	host->ping_addr = *ping_addr;
 	th_info.host = host;
 	th_info.id = 0;

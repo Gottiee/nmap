@@ -69,7 +69,7 @@ uint16_t get_random_port( void );
 bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr);
 void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd pollfd, char packet[4096], struct iphdr *iph );
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr);
-void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host, pcap_t *handle, pcap_if_t *alldvsp);
+void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host);
 
 void scan_switch( t_scan_port *port, t_thread_arg *th_info );
 bool scan_all( t_scan_port *port, t_thread_arg th_info );
@@ -78,7 +78,7 @@ bool scan_all( t_scan_port *port, t_thread_arg th_info );
 void scan_tcp( t_scan_port *port, t_thread_arg *th_info );
 void scan_udp( t_scan_port *port, t_thread_arg *th_info );
 void setup_filter(char *filter_str, pcap_t *handle);
-pcap_t *init_handler(char *device);
+pcap_t *init_handler( void );
 pcap_if_t *init_device(t_info *info);
 void	init_ip_h( struct iphdr *iph, const t_thread_arg *th_info, const uint8_t protocol );
 uint16_t	get_checksum( const t_thread_arg *th_info, void *header, const uint8_t protocol );
