@@ -116,7 +116,6 @@ void print_line(t_scan_port *port, t_info *info)
 	{
 		scan_type = info->scan_type[i];
 		state = port->state[scan_type];
-		// printf("state = %d for scan_type[i = %d] =  %d\n", state, i, scan_type);
 		if (scan_type == -1)
 			continue;
 		if (state != OPEN && info->port_range > 10)

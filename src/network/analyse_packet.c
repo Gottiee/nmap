@@ -20,7 +20,6 @@ void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 
 	if (scan_type == SYN && r_ip->protocol == IPPROTO_ICMP)
 	{
-		//	ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13)
 		if (r_icmp->type == 3)
 		{
 			if (r_icmp->code == 1 || r_icmp->code == 2 || r_icmp->code == 3 
@@ -60,7 +59,6 @@ void	recv_udp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 
 	if (r_ip->protocol == IPPROTO_ICMP)
 	{
-		//	ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13)
 		if (r_icmp->type == 3)
 		{
 			if (r_icmp->code == 1 || r_icmp->code == 2

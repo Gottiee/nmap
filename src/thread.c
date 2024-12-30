@@ -1,5 +1,4 @@
 #include "../inc/nmap.h"
-//	ERROR OK
 
 pthread_mutex_t	g_print_lock;
 pthread_mutex_t	g_lock;
@@ -178,21 +177,15 @@ void threading_scan_port(t_info *info, t_host *current_host)
 
 	alloc_values(&tab_th_info, &threads, info);
 
-	// if (init_device(info) == NULL)
-	// {
-	// 	free(tab_th_info);
-	// 	free(threads);
-	// 	return ;
-	// }
 	init_threads(threads, tab_th_info, info, info->alldvsp);
 
 	while (current_host != NULL)
 	{
-		while (port < last_port)																// run through ports
+		while (port < last_port)
 		{
-			while (scan < NB_MAX_SCAN && info->scan_type[scan] != -1)	// run through scan types
+			while (scan < NB_MAX_SCAN && info->scan_type[scan] != -1)
 			{
-				for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)	// run through threads
+				for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)
 				{
 					if (pthread_mutex_trylock(&(tab_th_info[th_id].lock)) == 0)
 					{
@@ -217,7 +210,6 @@ void threading_scan_port(t_info *info, t_host *current_host)
 						scan++;
 						if (scan > NB_MAX_SCAN || info->scan_type[scan] == -1)
 							break;
-						// usleep(10);
 						sleep(1);
 					}
 				}

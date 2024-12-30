@@ -1,5 +1,4 @@
 #include "../../inc/nmap.h"
-//	ERROR OK
 
 // pour ecouter on doit creer un pcap_t *handle sur le quel on met les filtres et qui est utilisé pour recevoir les paquets
 // le probleme c'est qu'on peut pas en créer qu'un parce qu'avec les threads ca va datarace i guess
@@ -16,10 +15,8 @@ uint16_t get_random_port( void )
 bool setup_filter(char *filter_str, pcap_t *handle)
 {
 	struct bpf_program filter;
-	// printf("handle == %p\n", handle);
 	if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
 	{
-		// printf("Bad filter: %s\n", filter_str);
 		pthread_mutex_lock(&g_lock);
 		g_done = 1;
 		pthread_mutex_unlock(&g_lock);
@@ -157,8 +154,8 @@ uint16_t	get_checksum( const t_thread_arg *th_info, void *header, const uint8_t 
 		udph = header;
 	
 
-	psh.source_address = th_info->ip_src.s_addr;  // Adresse source
-	psh.dest_address = th_info->host->ping_addr.sin_addr.s_addr;  // Adresse de destination
+	psh.source_address = th_info->ip_src.s_addr;
+	psh.dest_address = th_info->host->ping_addr.sin_addr.s_addr;
 	psh.placeholder = 0;
 	psh.protocol = protocol;
 
@@ -215,7 +212,6 @@ bool send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			pthread_mutex_lock(&g_lock);
 			g_done = 1;
 			pthread_mutex_unlock(&g_lock);
-			// pcap_close(th_info->handle);
 			fprintf(stderr, "ft_nmap: sendto: %s\n", strerror(errno));
 			return (1);
 		}
@@ -227,7 +223,6 @@ bool send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			pthread_mutex_lock(&g_lock);
 			g_done = 1;
 			pthread_mutex_unlock(&g_lock);
-			// pcap_close(th_info->handle);
 			fprintf(stderr, "ft_nmap: poll: %s\n", strerror(errno));
 			return (1);
 		}
@@ -240,13 +235,11 @@ bool send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			ret_val = pcap_next_ex(th_info->handle, &pkt_h, &r_data);
 			if (ret_val == 1)
 			{
-				// pthread_mutex_lock(&g_print_lock);printf( GREEN "(%d) > pcap_next(%d): received\n " RESET, th_info->id, port->nb);pthread_mutex_unlock(&g_print_lock);
 				handle_return_packet(r_data, port, th_info->id, th_info->scan_type, th_info->host);
 				break ;
 			}
 			else if (ret_val == 0)
 			{
-				// printf("(%d) >>> pcap_next(%d): timed out\n", th_info->id, port->nb);
 				goto arm_poll;
 			}
 			else 
@@ -266,7 +259,6 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 {
 	memset(ping_addr, 0, sizeof(struct sockaddr_in));
 
-	// tcheck si c'est une address ipv4
 	if (inet_pton(AF_INET, target, &ping_addr->sin_addr) == 1) {
 		ping_addr->sin_family = AF_INET;
 		ping_addr->sin_port = htons(0);
@@ -342,7 +334,7 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 	
 	for (; port < last_port; port++)
 	{
-		for (uint8_t scan = 0; scan < NB_MAX_SCAN && info->scan_type[scan] != -1; scan++)	// run through scan types
+		for (uint8_t scan = 0; scan < NB_MAX_SCAN && info->scan_type[scan] != -1; scan++)
 		{
 			host->port_tab[port - info->first_port].nb = port;
 			th_info.scan_type = info->scan_type[scan];

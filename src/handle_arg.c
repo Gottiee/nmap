@@ -375,7 +375,7 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 				++(*argv);
 				break ;
 			default:
-				printf("ft_nmap: Unrecognize option '%s'\n", **argv);
+				fprintf(stderr, "ft_nmap: Unrecognize option '%s'\n", **argv);
 				return (error_handling(&hostnames));
 		}
 		if (*argv != NULL && i != 1)
