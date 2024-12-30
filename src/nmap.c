@@ -29,12 +29,9 @@ bool ping_and_scan(t_info *info)
 	t_host *start_host = NULL;
 	t_host *current_host = NULL;
 
-	if (info->nb_thread == 0)
-	{
-		info->alldvsp = init_device(info);
-		// if (info->options.interface != NULL)
-		// 	handle = init_handler();
-	}
+	info->alldvsp = init_device(info);
+	if (info->alldvsp == NULL)
+		return (1);
 	for (int i = 0; info->hostnames[i]; i++)
 	{
 		if (!fill_sockaddr_in(info->hostnames[i], &info->ping_addr))

@@ -121,7 +121,6 @@ pcap_if_t *init_device(t_info *info)
 		if (dev_addr->addr && dev_addr->netmask && dev_addr->addr->sa_family == AF_INET)
 		{
 			struct sockaddr_in *addr = (struct sockaddr_in *)dev_addr->addr;
-			// printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
 			info->ip_src = addr->sin_addr;
 			break;
 		}
@@ -247,7 +246,7 @@ bool send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			}
 			else if (ret_val == 0)
 			{
-				printf("(%d) >>> pcap_next(%d): timed out\n", th_info->id, port->nb);
+				// printf("(%d) >>> pcap_next(%d): timed out\n", th_info->id, port->nb);
 				goto arm_poll;
 			}
 			else 
@@ -255,10 +254,7 @@ bool send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 				pthread_mutex_lock(&g_lock);
 				g_done = 1;
 				pthread_mutex_unlock(&g_lock);
-				char	err_str[PCAP_ERRBUF_SIZE] = {0};
-				sprintf(err_str, "ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
-				// pcap_close(th_info->handle);
-				fprintf(stderr, "ft_nmap: pcap_next_ex: %s\n", err_str);
+				fprintf(stderr, "ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
 				return (1);
 			}
 		}
