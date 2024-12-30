@@ -76,7 +76,7 @@ bool scan_all( t_scan_port *port, t_thread_arg th_info );
 
 
 bool scan_tcp( t_scan_port *port, t_thread_arg *th_info );
-void scan_udp( t_scan_port *port, t_thread_arg *th_info );
+bool scan_udp( t_scan_port *port, t_thread_arg *th_info );
 bool setup_filter(char *filter_str, pcap_t *handle);
 pcap_t *init_handler( void );
 pcap_if_t *init_device(t_info *info);

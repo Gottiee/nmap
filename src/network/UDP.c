@@ -61,7 +61,7 @@ void	init_values_udp( struct iphdr *iph, struct udphdr *udph, char packet[4096],
 	setup_filter(filter_str, th_info->handle);
 }
 
-void scan_udp( t_scan_port *port, t_thread_arg *th_info )
+bool scan_udp( t_scan_port *port, t_thread_arg *th_info )
 {
 	char	packet[4096] = {0}; 
 	struct iphdr *iph = (struct iphdr *)packet;
@@ -71,6 +71,7 @@ void scan_udp( t_scan_port *port, t_thread_arg *th_info )
 
 	init_values_udp(iph, udph, packet, &pollfd, th_info, port);
 
-	send_recv_packet(port, th_info, pollfd, packet, iph);
-
+	if (send_recv_packet(port, th_info, pollfd, packet, iph) == 1)
+		return (1);
+	return (0);
 }

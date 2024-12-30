@@ -303,7 +303,10 @@ bool	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 			return (1);
 	}
 	else if (th_info->scan_type == UDP)
-		scan_udp(port, th_info);
+	{
+		if (scan_udp(port, th_info) == 1)
+			return (1);
+	}
 	else if (th_info->scan_type == ALL)
 		scan_all(port, *th_info);
 	return (0);

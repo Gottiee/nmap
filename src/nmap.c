@@ -87,13 +87,16 @@ int main( int argc, char **argv )
 	if (info.hostnames == NULL)
 		exit (2);
 
-	ping_and_scan(&info);
+	if (ping_and_scan(&info) == 1)
+		goto end_program;
 	
 	super_print(info.start_host, &info);
-	free_host_list(info.start_host);
 
-	for (size_t i = 0; info.hostnames[i] != NULL; i++)
-		free(info.hostnames[i]);
-	free(info.hostnames);
+	end_program:
+		free_host_list(info.start_host);
+
+		for (size_t i = 0; info.hostnames[i] != NULL; i++)
+			free(info.hostnames[i]);
+		free(info.hostnames);
 	return(0);
 }
