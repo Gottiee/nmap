@@ -24,7 +24,7 @@ void	init_values( t_info *info )
 
 }
 
-void ping_and_scan(t_info *info)
+bool ping_and_scan(t_info *info)
 {
 	t_host *start_host = NULL;
 	t_host *current_host = NULL;
@@ -52,6 +52,8 @@ void ping_and_scan(t_info *info)
 		if (!start_host)
 		{
 			start_host = init_host_list(info->hostnames[i], info);
+			if (start_host == NULL)
+				return (1);
 			memcpy(&start_host->ping_addr, &info->ping_addr, sizeof(struct sockaddr_in));
 			info->start_host = start_host;
 			current_host = start_host;
@@ -59,6 +61,8 @@ void ping_and_scan(t_info *info)
 		else
 		{
 			current_host = add_host_list(info->hostnames[i], start_host, info);
+			if (current_host == NULL)
+				return (1);
 			memcpy(&current_host->ping_addr, &info->ping_addr, sizeof(struct sockaddr_in));
 		}
 		if (info->nb_thread == 0)
@@ -68,6 +72,7 @@ void ping_and_scan(t_info *info)
 		threading_scan_port(info, start_host);
 	else
 		pcap_freealldevs(info->alldvsp);
+	return (0);
 }
 
 int main( int argc, char **argv )
