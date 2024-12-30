@@ -1,4 +1,5 @@
 #include "../../inc/nmap.h"
+//	ERROR OK
 
 // pour ecouter on doit creer un pcap_t *handle sur le quel on met les filtres et qui est utilisé pour recevoir les paquets
 // le probleme c'est qu'on peut pas en créer qu'un parce qu'avec les threads ca va datarace i guess
@@ -12,81 +13,113 @@ uint16_t get_random_port( void )
     return (syscall(SYS_gettid) + rand() % (65535 - 49152 + 1) + 49152);
 }
 
-void setup_filter(char *filter_str, pcap_t *handle)
+bool setup_filter(char *filter_str, pcap_t *handle)
 {
 	struct bpf_program filter;
+	// printf("handle == %p\n", handle);
 	if (pcap_compile(handle, &filter, filter_str, 0, PCAP_NETMASK_UNKNOWN) == -1)
 	{
-		printf("Bad filter: %s\n", filter_str);
-		fatal_error_str("Bad filter: %s\n", pcap_geterr(handle));
+		// printf("Bad filter: %s\n", filter_str);
+		pthread_mutex_lock(&g_lock);
+		g_done = 1;
+		pthread_mutex_unlock(&g_lock);
+		fprintf(stderr, "ft_nmap: pcap_compile: %s\n", pcap_geterr(handle));
+		return (1);
 	}
-	// sprintf(str_filter, "src host %s and (tcp or icmp)", ip_buf);
-	// if (pcap_setfilter(handle, &filter) == -1)
-	if (1)
+	if (pcap_setfilter(handle, &filter) == -1)
 	{
 		pthread_mutex_lock(&g_lock);
 		g_done = 1;
 		pthread_mutex_unlock(&g_lock);
-		char	str_err[PCAP_ERRBUF_SIZE] = {0};
-		sprintf(str_err, "Error setting filters: %s\n", pcap_geterr(handle));
-		pcap_close(handle);
-		fatal_error(str_err);
+		pcap_freecode(&filter);
+		fprintf(stderr, "ft_nmap: set_filter: %s\n", pcap_geterr(handle));
+		return (1);
 	}
 	pcap_freecode(&filter);
+	return (0);
 }
 
-pcap_t *init_handler( void  )
+pcap_t *init_handler( void )
 {
-	pcap_t *handle;
-	char error_buffer[PCAP_ERRBUF_SIZE];
+	pcap_t *handle = NULL;
+	char error_buffer[PCAP_ERRBUF_SIZE] = {0};
 
 	if (g_info->options.interface != NULL)
 		handle = pcap_create(g_info->options.interface, error_buffer);
 	else
 		handle = pcap_create("any", error_buffer);
 	if (handle == NULL)
-		fatal_error_str("pcap_create()", error_buffer);
-	if (pcap_set_snaplen(handle, 100) != 0){
-		fatal_error("pcap_create()");
+	{
+		fprintf(stderr, "ft_nmap: pcap_create: %s\n", error_buffer);
+		return (NULL);
+	}
+	if (pcap_set_snaplen(handle, 100) != 0)
+	{
+		pcap_close(handle);
+		fprintf(stderr, "ft_nmap: pcap_create: %s\n", error_buffer);
+		return (NULL);
     }
-    if (pcap_set_immediate_mode(handle, 1) != 0) {
-		fatal_error("pcap_immediate_mode()");
+    if (pcap_set_immediate_mode(handle, 1) != 0)
+	{
+		pcap_close(handle);
+		fprintf(stderr, "ft_nmap: pcap_immediate_mode: %s\n", error_buffer);
+		return (NULL);
     }
-    if (pcap_set_timeout(handle, 500) != 0) {
-		fatal_error("pcap_timeout()");
+    if (pcap_set_timeout(handle, 500) != 0)
+	{
+		pcap_close(handle);
+		fprintf(stderr, "ft_nmap: pcap_timeout: %s", error_buffer);
+		return (NULL);
     }
-    if (pcap_setnonblock(handle, 1, NULL) != 0) {
-		fatal_error("pcap_setnoblock()");
+    if (pcap_setnonblock(handle, 1, NULL) != 0)
+	{
+		pcap_close(handle);
+		fprintf(stderr, "ft_nmap: pcap_setnoblock: %s\n", error_buffer);
+		return (NULL);
     }
-    if (pcap_set_promisc(handle, 1) != 0) {
-		fatal_error("pcap_set_promisc()");
+    if (pcap_set_promisc(handle, 1) != 0)
+	{
+		pcap_close(handle);
+		fprintf(stderr, "ft_nmap: pcap_set_promisc: %s\n/", error_buffer);
+		return (NULL);
     }
-    if (pcap_activate(handle) != 0) {
-		fatal_error_str("Quitting!\n Unknown interface: ", g_info->options.interface);
+    if (pcap_activate(handle) != 0)
+	{
+		pcap_close(handle);
+		fprintf(stderr, "Quitting!\n Unknown interface: %s\n", g_info->options.interface);
+		return (NULL);
     }
-    if (pcap_datalink(handle) != DLT_LINUX_SLL) {
-		fatal_error("pcap_datalink()");
+    if (pcap_datalink(handle) != DLT_LINUX_SLL)
+	{
+		pcap_close(handle);
+		fprintf(stderr, "ft_nmap: pcap_datalink: %s\n", error_buffer);
+		return (NULL);
     }
 	return handle;
 }
 
 pcap_if_t *init_device(t_info *info)
 {
-	char error_buffer[PCAP_ERRBUF_SIZE]; (void) error_buffer;
+	char error_buffer[PCAP_ERRBUF_SIZE] = {0};
 	pcap_if_t *alldvsp = info->alldvsp;
 	pcap_addr_t *dev_addr;
 
 	if (pcap_findalldevs(&alldvsp, error_buffer) == -1)
 	{
 		pcap_freealldevs(alldvsp);
-		fatal_error_str("Nmap: pcap find device: %s\n", error_buffer);
+		fprintf(stderr, "Nmap: pcap find device: %s\n", error_buffer);
+		return (NULL);
 	}
 	if (!alldvsp)
-		fatal_error("Nmap: no interface found\n");
+	{
+		fprintf(stderr, "Nmap: no interface found\n");
+		return (NULL);
+	}
 	info->device = alldvsp->name;
-	for (dev_addr = alldvsp->addresses; dev_addr != NULL; dev_addr = dev_addr->next) {
-		if (dev_addr->addr && dev_addr->netmask &&
-			dev_addr->addr->sa_family == AF_INET) {
+	for (dev_addr = alldvsp->addresses; dev_addr != NULL; dev_addr = dev_addr->next)
+	{
+		if (dev_addr->addr && dev_addr->netmask && dev_addr->addr->sa_family == AF_INET)
+		{
 			struct sockaddr_in *addr = (struct sockaddr_in *)dev_addr->addr;
 			// printf("  IP Address: %s\n", inet_ntoa(addr->sin_addr));
 			info->ip_src = addr->sin_addr;
@@ -158,7 +191,7 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	if ((getaddrinfo(input_domain, NULL, &hints, &res)) != 0)
+	if (getaddrinfo(input_domain, NULL, &hints, &res) != 0)
 		return (0);
 	ping_addr->sin_family = AF_INET;
 	ping_addr->sin_port = htons(0);
@@ -167,7 +200,7 @@ bool dns_lookup(char *input_domain, struct sockaddr_in *ping_addr)
 	return (1);
 }
 
-void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd pollfd, char packet[4096], struct iphdr *iph )
+bool send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd pollfd, char packet[4096], struct iphdr *iph )
 {
 	(void)packet;(void) iph;
 	uint8_t	retry = 0;
@@ -180,20 +213,27 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 		if (sendto(th_info->sockfd, packet, iph->tot_len, 0, 
 			(struct sockaddr *)&(th_info->host->ping_addr), sizeof(struct sockaddr)) == -1)
 		{
-			pcap_close(th_info->handle);
-			fatal_perror("ft_nmap: syn: sendto()");
+			pthread_mutex_lock(&g_lock);
+			g_done = 1;
+			pthread_mutex_unlock(&g_lock);
+			// pcap_close(th_info->handle);
+			fprintf(stderr, "ft_nmap: sendto: %s\n", strerror(errno));
+			return (1);
 		}
 
 	arm_poll:
 		ret_val = poll(&pollfd, 1, 400);
 		if (ret_val == -1)
 		{
-			pcap_close(th_info->handle);
-			fatal_perror("ft_nmap: poll");
+			pthread_mutex_lock(&g_lock);
+			g_done = 1;
+			pthread_mutex_unlock(&g_lock);
+			// pcap_close(th_info->handle);
+			fprintf(stderr, "ft_nmap: poll: %s\n", strerror(errno));
+			return (1);
 		}
 		else if (ret_val == 0)
 		{
-			// printf(RED "(%d)>>> poll(%d) TO\n" RESET, th_info->id, port->nb);
 			continue ;
 		}
 		else if (ret_val >= 0 && pollfd.revents & POLLIN)
@@ -212,13 +252,18 @@ void send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 			}
 			else 
 			{
+				pthread_mutex_lock(&g_lock);
+				g_done = 1;
+				pthread_mutex_unlock(&g_lock);
 				char	err_str[PCAP_ERRBUF_SIZE] = {0};
 				sprintf(err_str, "ft_nmap: pcap_next_ex: %s\n", pcap_geterr(th_info->handle));
-				pcap_close(th_info->handle);
-				fatal_error(err_str);
+				// pcap_close(th_info->handle);
+				fprintf(stderr, "ft_nmap: pcap_next_ex: %s\n", err_str);
+				return (1);
 			}
 		}
 	}
+	return (0);
 }
 
 bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr) 
@@ -249,16 +294,19 @@ bool scan_all( t_scan_port *port, t_thread_arg th_info )
 	return (0); 
 }
 
-void	scan_switch( t_scan_port *port, t_thread_arg *th_info)
+bool	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 {
 	if (th_info->scan_type <= XMAS)
-		scan_tcp(port, th_info);
+	{
+		if (scan_tcp(port, th_info) == 1)
+			return (1);
+	}
 	else if (th_info->scan_type == UDP)
 		scan_udp(port, th_info);
 	else if (th_info->scan_type == ALL)
 		scan_all(port, *th_info);
+	return (0);
 }
-
 
 void	init_th_info( t_thread_arg *th_info, t_info *info )
 {
@@ -298,8 +346,10 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 		{
 			host->port_tab[port - info->first_port].nb = port;
 			th_info.scan_type = info->scan_type[scan];
-			scan_switch(&host->port_tab[port - info->first_port], &th_info);
+			if (scan_switch(&host->port_tab[port - info->first_port], &th_info) == 1)
+				goto end_scan;
 		}
 	}
-	pcap_close(th_info.handle);
+	end_scan:
+		pcap_close(th_info.handle);
 }

@@ -45,7 +45,7 @@ uint16_t	init_tcp_h( struct tcphdr *tcph, const uint16_t port_nb, const uint8_t 
 	return random_src_port;
 }
 
-void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096], struct pollfd *pollfd, const t_thread_arg *th_info, t_scan_port *port )
+bool	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096], struct pollfd *pollfd, const t_thread_arg *th_info, t_scan_port *port )
 {
 	char	filter_str[1024] = {0};
 
@@ -65,18 +65,22 @@ void	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096],
 		fatal_perror("ft_nmap: pcap_get_selectable_fd");
 
 	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d and dst port %d", inet_ntoa(th_info->host->ping_addr.sin_addr), port->nb, random_src_port);
-	setup_filter(filter_str, th_info->handle);
-
+	if (setup_filter(filter_str, th_info->handle) == 1)
+		return (1);
+	return (0);
 }
 
-void scan_tcp( t_scan_port *port, t_thread_arg *th_info )
+bool scan_tcp( t_scan_port *port, t_thread_arg *th_info )
 {
 	struct pollfd	pollfd = {0};
 	char packet[4096] = {0};
 	struct iphdr *iph = (struct iphdr *) packet;
 	struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(struct iphdr));
 	
-	init_values_tcp(iph, tcph, packet, &pollfd, th_info, port);
+	if (init_values_tcp(iph, tcph, packet, &pollfd, th_info, port) == 1)
+		return (1);
 
-	send_recv_packet(port, th_info, pollfd, packet, iph);
+	if (send_recv_packet(port, th_info, pollfd, packet, iph) == 1)
+		return (1);
+	return (0);
 }
