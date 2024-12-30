@@ -104,7 +104,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 
 	for (int16_t i = 0; i < info->nb_thread; i++)
 	{
-		// tab_th_info[i].handle = init_handler();
+		tab_th_info[i].handle = init_handler();
 		if (tab_th_info[i].handle == NULL)
 		{
 			handle_error_init_threads(threads, tab_th_info, i, alldevsp, "ft_nmap: init_handle");

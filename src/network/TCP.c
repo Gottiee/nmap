@@ -62,7 +62,10 @@ bool	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096],
 	pollfd->events = POLLIN;
 	pollfd->fd = pcap_get_selectable_fd(th_info->handle);
 	if (pollfd->fd == -1)
-		fatal_perror("ft_nmap: pcap_get_selectable_fd");
+	{
+		fprintf(stderr, "ft_nmap: pcap_get_selectable_fd");
+		return (1);
+	}
 
 	sprintf(filter_str, "src host %s and (tcp or icmp) and src port %d and dst port %d", inet_ntoa(th_info->host->ping_addr.sin_addr), port->nb, random_src_port);
 	if (setup_filter(filter_str, th_info->handle) == 1)
@@ -78,7 +81,10 @@ bool scan_tcp( t_scan_port *port, t_thread_arg *th_info )
 	struct tcphdr *tcph = (struct tcphdr *) (packet + sizeof(struct iphdr));
 	
 	if (init_values_tcp(iph, tcph, packet, &pollfd, th_info, port) == 1)
+	{
+		pthread_mutex_lock(&g_lock);g_done = 1;pthread_mutex_unlock(&g_lock);
 		return (1);
+	}
 
 	if (send_recv_packet(port, th_info, pollfd, packet, iph) == 1)
 		return (1);

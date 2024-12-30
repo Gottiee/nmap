@@ -286,7 +286,8 @@ bool scan_all( t_scan_port *port, t_thread_arg th_info )
 	for (uint8_t i = SYN; i <= XMAS; i++)
 	{
 		th_info.scan_type = i;
-		scan_tcp(port, &th_info);
+		if (scan_tcp(port, &th_info) == 1)
+			return (1);
 	}
 	th_info.scan_type = UDP;
 	scan_udp(port, &th_info);
