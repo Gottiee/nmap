@@ -49,13 +49,12 @@ bool	init_values_tcp( struct iphdr *iph, struct tcphdr *tcph, char packet[4096],
 {
 	char	filter_str[1024] = {0};
 
-	srand(time(NULL));
 	init_ip_h(iph, th_info, IPPROTO_TCP);
 	iph->check = checksum((unsigned short *)packet, iph->tot_len);
-	uint16_t random_src_port =  init_tcp_h(tcph, port->nb, th_info->scan_type);
+	uint16_t random_src_port = init_tcp_h(tcph, port->nb, th_info->scan_type);
 	tcph->check = get_checksum(th_info, tcph, IPPROTO_TCP);
 	if (th_info->scan_type == S_NULL || th_info->scan_type == FIN || th_info->scan_type == XMAS)
-		port->state[th_info->scan_type] = UNFILTERED;
+		port->state[th_info->scan_type] = OPEN_FILT;
 	else
 		port->state[th_info->scan_type] = FILTERED;
 	

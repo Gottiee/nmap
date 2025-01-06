@@ -15,23 +15,6 @@ void	print_usage( void )
 	printf("--ip ip_addr or hostname : is required. ip_addr a IPv4 IP address and hostname is a hostname.\n\t\t\t   Only a single ip address or hostname is required.\n");
 }
 
-int    ft_nblen(int nb)
-{
-    int        len;
-    long    n;
-
-    len = 0;
-    n = nb;
-    if (n == 0)
-        return (1);
-    while (n > 0)
-    {
-        len++;
-        n /= 10;
-    }
-    return (len);
-}
-
 char *return_str_state(int state)
 {
 	switch (state)
@@ -139,13 +122,13 @@ void print_line(t_scan_port *port, t_info *info)
 	}
 }
 
-void	super_print( t_host *host, t_info *info )
+void	super_print( t_host *host, t_info *info, double second )
 {
 	printf("\n");
 
 	printf("Scan Configurations:\n");
 	printf("Nbr of Ports to scan: %d\n", info->port_range);
-	printf("Nbr of threads: %d\n", info->nb_thread);
+	printf("Nbr of threads: %d\n", info->real_threads);
 	printf("Scans to be performed: ");
 	char *scan;
 	for (int scan_type = 0; scan_type < NB_MAX_SCAN; scan_type++)
@@ -172,7 +155,6 @@ void	super_print( t_host *host, t_info *info )
 		host = host->next;
 		printf("\n");
 	}
-	double second = time_till_start(&info->time_start);
 	printf("Nmap done: %d IP address (%d host up) scanned in %0.2f seconds\n", 
 				info->nb_host_ping, info->nb_host_ping_success, second);
 }

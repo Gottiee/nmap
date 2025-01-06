@@ -18,7 +18,7 @@ void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 	struct tcphdr	*r_tcp = (struct tcphdr *)(r_buf + (r_ip->ihl * 4));
 	struct icmphdr	*r_icmp = (struct icmphdr *)(r_buf + (r_ip->ihl * 4));
 
-	if (scan_type == SYN && r_ip->protocol == IPPROTO_ICMP)
+	if (r_ip->protocol == IPPROTO_ICMP)
 	{
 		if (r_icmp->type == 3)
 		{

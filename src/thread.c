@@ -58,8 +58,14 @@ void	close_all_threads( pthread_t *threads, t_thread_arg *tab_th_info, const uin
 {
 	for (int i = 0; i < nb_th; i++)
 	{
-		pcap_close(tab_th_info[i].handle);
+		if (pthread_mutex_lock(&(tab_th_info[i].lock)) == 0)
+		{
+			pthread_cond_signal(&tab_th_info[i].cond);
+			pthread_mutex_unlock(&(tab_th_info[i].lock));
+			usleep(1);
+		}
 		close_thread(&threads[i], &tab_th_info[i]);
+		pcap_close(tab_th_info[i].handle);
 	}
 	if (threads)
 		free(threads);
@@ -70,24 +76,20 @@ void	close_all_threads( pthread_t *threads, t_thread_arg *tab_th_info, const uin
 	pthread_mutex_destroy(&g_print_lock);
 }
 
-void	handle_error_init_threads( pthread_t *threads, t_thread_arg *tab_th_info, const int16_t i, pcap_if_t *alldevsp, char *err_str )
+void	handle_error_init_threads( pthread_t *threads, t_thread_arg *tab_th_info, const int16_t i, char *err_str )
 {
 	pthread_mutex_lock(&g_lock);g_done = 1;pthread_mutex_unlock(&g_lock);
 	send_end_signal(tab_th_info, i);
 	close_all_threads(threads, tab_th_info, i);
-	pcap_freealldevs(alldevsp);
 	fatal_perror(err_str);
-	if (tab_th_info[i].sockfd != 0)
-		close(tab_th_info[i].sockfd);
 }
 
-void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, pcap_if_t *alldevsp )
+void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info )
 {
 	if (pthread_mutex_init(&g_print_lock, NULL) != 0)
 	{
 		free(threads);
 		free(tab_th_info);
-		pcap_freealldevs(alldevsp);
 		fatal_perror("ft_nmap: mutex_init");
 	}
 	if (pthread_mutex_init(&g_lock, NULL) != 0)
@@ -95,7 +97,6 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 		pthread_mutex_destroy(&g_print_lock);
 		free(threads);
 		free(tab_th_info);
-		pcap_freealldevs(alldevsp);
 		fatal_perror("ft_nmap: mutex_init");
 	}
 
@@ -106,7 +107,7 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 		tab_th_info[i].handle = init_handler();
 		if (tab_th_info[i].handle == NULL)
 		{
-			handle_error_init_threads(threads, tab_th_info, i, alldevsp, "ft_nmap: init_handle");
+			handle_error_init_threads(threads, tab_th_info, i, "ft_nmap: init_handle");
 		}
 		tab_th_info[i].id = i;
 		tab_th_info[i].index_port = 0;
@@ -116,19 +117,19 @@ void	init_threads( pthread_t	*threads, t_thread_arg *tab_th_info, t_info *info, 
 		tab_th_info[i].sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 		if (tab_th_info[i].sockfd == -1)
 		{
-			handle_error_init_threads(threads, tab_th_info, i, alldevsp, "ft_nmap: socket");
+			handle_error_init_threads(threads, tab_th_info, i, "ft_nmap: socket");
 		}
 		struct timeval timeout;
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 		if (setsockopt(tab_th_info[i].sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
 		{
-			handle_error_init_threads(threads, tab_th_info, i, alldevsp, "ft_nmap: setsockopt");			
+			handle_error_init_threads(threads, tab_th_info, i, "ft_nmap: setsockopt");			
 		}
 
 		if (pthread_mutex_init(&(tab_th_info[i].lock), NULL) != 0)
 		{
-			handle_error_init_threads(threads, tab_th_info, i, alldevsp, "ft_nmap: pthread_mutex_init");			
+			handle_error_init_threads(threads, tab_th_info, i, "ft_nmap: pthread_mutex_init");			
 		}
 		if (pthread_cond_init(&(tab_th_info[i].cond), NULL) != 0)
 		{
@@ -150,7 +151,8 @@ void	*scan_routine( void *arg )
 	t_thread_arg	*th_info = (t_thread_arg *) arg;
 
 	pthread_mutex_lock(&(th_info->lock));
-	while (check_g_done() == 0)
+	
+	do
 	{
 		th_info->data_ready = 0;
 		while (check_g_done() == 0 && th_info->data_ready == 0)
@@ -161,7 +163,7 @@ void	*scan_routine( void *arg )
 			break ;
 		if (scan_switch(&th_info->host->port_tab[th_info->index_port], th_info) == 1)
 			break ;
-	}
+	} while (check_g_done() == 0);
 	pthread_mutex_unlock(&(th_info->lock));
 	return (NULL);
 }
@@ -177,7 +179,7 @@ void threading_scan_port(t_info *info, t_host *current_host)
 
 	alloc_values(&tab_th_info, &threads, info);
 
-	init_threads(threads, tab_th_info, info, info->alldvsp);
+	init_threads(threads, tab_th_info, info);
 
 	while (current_host != NULL)
 	{
@@ -187,6 +189,7 @@ void threading_scan_port(t_info *info, t_host *current_host)
 			{
 				for (uint8_t th_id = 0; port < last_port && th_id < info->nb_thread; th_id++)
 				{
+					usleep(200);
 					if (pthread_mutex_trylock(&(tab_th_info[th_id].lock)) == 0)
 					{
 						if (g_done == 1)
@@ -200,17 +203,21 @@ void threading_scan_port(t_info *info, t_host *current_host)
 							continue ;
 						}
 						tab_th_info[th_id].host = current_host;
-						tab_th_info[th_id].host->port_tab[port - info->first_port].nb = port;
+						if (tab_th_info[th_id].host->port_tab[port - info->first_port].nb != port)
+							tab_th_info[th_id].host->port_tab[port - info->first_port].nb = port;
+						if (info->options.verbose == true)
+						{
+							pthread_mutex_lock(&g_print_lock);printf("(main) thread %d scanning host %s port %d\n", th_id, current_host->name, tab_th_info[th_id].host->port_tab[port - info->first_port].nb);pthread_mutex_unlock(&g_print_lock);
+						}
 						tab_th_info[th_id].index_port = port - info->first_port;
-						tab_th_info[th_id].data_ready = 1;
 						tab_th_info[th_id].scan_type = info->scan_type[scan];
+						tab_th_info[th_id].data_ready = 1;
 						bzero(str_filter, IPADDR_STRLEN);
 						pthread_cond_signal(&tab_th_info[th_id].cond);
 						pthread_mutex_unlock(&(tab_th_info[th_id].lock));
 						scan++;
 						if (scan > NB_MAX_SCAN || info->scan_type[scan] == -1)
 							break;
-						sleep(1);
 					}
 				}
 			}
@@ -220,13 +227,11 @@ void threading_scan_port(t_info *info, t_host *current_host)
 		port = info->first_port;
 		current_host = current_host->next;
 	}
-	
 	pthread_mutex_lock(&g_lock);
 	g_done = 1;
 	pthread_mutex_unlock(&g_lock);
 
 	end_main:
-		send_end_signal(tab_th_info, info->nb_thread);
 		close_all_threads(threads, tab_th_info, info->nb_thread);
 		pcap_freealldevs(info->alldvsp);
 }

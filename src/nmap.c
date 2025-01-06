@@ -6,18 +6,20 @@ void	init_values( t_info *info )
 {
 	info->hostnames = NULL;
 	info->nb_thread = 0;
+	info->real_threads = 0;
 	for (uint8_t i = 0; i < NB_MAX_SCAN; i++)
 	{
 		info->scan_type[i] = i;
 	}
 	info->nb_host_ping = 0;
 	info->nb_host_ping_success = 0;
+	info->nb_scan_type = NB_MAX_SCAN;
 
 	info->first_port = 1;
 	info->port_range = 1024;
 
 	info->options.ping = true;
-	info->options.random = false;
+	info->options.verbose = false;
 	info->options.nb_retries = 2;
 	info->options.interface = NULL;
 	info->options.ttl = IPDEFTTL;
@@ -77,17 +79,23 @@ int main( int argc, char **argv )
     t_info info = {0};
 	g_info = &info;
 	
-    gettimeofday(&info.time_start, NULL);
+	srand(time(NULL));
 
 	init_values(&info);
 	info.hostnames = handle_arg(argc, &argv, &info);
-	if (info.hostnames == NULL)
+	if (info.hostnames == NULL || info.hostnames[0] == NULL)
+	{
+		printf("QUITTING !\nNo host provided.\n\n");
+		print_usage();
 		exit (2);
+	}
 
+    gettimeofday(&info.time_start, NULL);
 	if (ping_and_scan(&info) == 1)
 		goto end_program;
+	double second = time_till_start(&info.time_start);
 	
-	super_print(info.start_host, &info);
+	super_print(info.start_host, &info, second);
 
 	end_program:
 		free_host_list(info.start_host);

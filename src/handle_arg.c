@@ -70,6 +70,7 @@ bool	define_scan( char ***argv, t_info *info )
 		nb_scan++;
 		++(*argv);
 	}
+	info->nb_scan_type = nb_scan;
 	return (0);
 }
 
@@ -143,7 +144,7 @@ bool	init_nb_threads( char ***argv, t_info *info )
 	}
 	if (i == 0)
 		return (return_error("Format error: speedup: no value"));
-	info->nb_thread = atoi(**argv);
+	info->real_threads = atoi(**argv);
 	if (info->nb_thread > 250)
 		return (return_error("Format error: thread: value must a positive number less than 250"));
 	return(0);
@@ -260,6 +261,7 @@ bool	define_nb_retries( char ***argv, t_info *info )
 	errno = 0;
 	
 	++(*argv);
+	printf("arg define == %s\n", **argv);
 	if (**argv == NULL)
 		return (return_error("Format error: max-retries: no value"));
 	for (i = 0; (**argv)[i] != '\0'; i++)
@@ -291,17 +293,88 @@ bool	define_ttl( char ***argv, t_info *info )
 			return (return_error("Format error: ttl: value must be numeric"));
 	}
 	if (i == 0)
-		return (return_error("Format error: ttl: no value"));
+		return (return_error("Format error: ttl:no value"));
 	info->options.ttl = atoi(**argv);
-	if (info->options.ttl == 0 ||  info->options.ttl > 255)
+	// if (info->options.ttl == 0 ||  info->options.ttl > 255)
+	if (info->options.ttl > 255)
 		return (return_error("Format error: ttl: value must a strictly positive number less than 250"));
 	return(0);
+}
+
+void	generate_ipv4( char *hostname )
+{
+	uint	tmp = 0;
+	char	*s_tmp = NULL;
+	
+	for (uint i = 0; i < 4; i++)
+	{
+		tmp = rand() % 255;
+		s_tmp = ft_itoa(tmp);
+		strcat(hostname, s_tmp);
+		if (i != 3)
+			strcat(hostname, ".");
+		free(s_tmp);
+	}
+}
+
+char **define_random_target( char ***argv )
+{
+	char	**hostnames = NULL;
+	size_t	random = 0;
+	size_t	i = 0;
+	errno = 0;
+	
+	++(*argv);
+	if (**argv == NULL)
+	{
+		perror("ft_nmap: rand-target: no value");
+		return (NULL);
+	}
+	for (i = 0; (**argv)[i] != '\0'; i++)
+	{
+		if (isdigit((**argv)[i]) == 0)
+		{
+			perror("ft_nmap: rand-target: must be a number");
+			return (NULL);
+		}
+	}
+	if (i == 0)
+	{
+		perror("ft_nmap: rand-target: no value");
+		return (NULL);
+	}
+
+	random = atoi(**argv);
+	if (random == 0)
+	{
+		perror("ft_nmap: rand-target: must be strictly positive");
+		return (NULL);
+	}
+	hostnames = calloc(random + 1, sizeof(char *));
+	if (hostnames == NULL)
+	{
+		perror("ft_nmap: calloc hostnames");
+		return (NULL);
+	}
+	for (size_t i = 0; i < random; i++)
+	{
+		hostnames[i] = calloc(16, 1);
+		if (hostnames[i] == NULL)
+		{
+			perror("ft_nmap: calloc hostnames[]");
+			free(hostnames);
+			return (NULL);
+		}
+		generate_ipv4(hostnames[i]);
+	}
+	
+	return (hostnames);
 }
 
 char	**handle_arg( int argc, char ***argv, t_info *info )
 {
 	char	**hostnames = NULL;
-	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", "max-retries", "ttl", "no-ping", "rand-target" "interface", NULL};
+	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", "max-retries", "ttl", "no-ping", "rand-target", "interface", "verbose", NULL};
 	uint8_t	i = 0;
 	unsigned short	port_range[2] = {0};
 
@@ -352,7 +425,10 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 				info->first_port = port_range[0];
 				break ;
 			case 5:
-				hostnames = init_hostnames(0, argv);
+				if (hostnames == NULL)
+					hostnames = init_hostnames(0, argv);
+				else
+					*argv += 1;
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
 				break ;
@@ -368,11 +444,19 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 				info->options.ping = false;
 				break ;
 			case 9:
-				info->options.random = true;
+				if (info->hostnames == NULL)
+					hostnames = define_random_target(argv);
+				else
+					*argv += 1;
+				if (hostnames == NULL)
+					return (error_handling(&hostnames));
 				break ;
 			case 10:
-				info->options.interface = **argv;
 				++(*argv);
+				info->options.interface = **argv;
+				break ;
+			case 11:
+				info->options.verbose = true;
 				break ;
 			default:
 				fprintf(stderr, "ft_nmap: Unrecognize option '%s'\n", **argv);
@@ -380,6 +464,12 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 		}
 		if (*argv != NULL && i != 1)
 			++(*argv);
+	}
+	uint t = 0;
+	if (info->real_threads > 0)
+	{
+		for ( ; hostnames[t] != NULL; t++){}
+		info->nb_thread = info->port_range * info->nb_scan_type * t;
 	}
 	return (hostnames);
 }

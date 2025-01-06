@@ -10,5 +10,7 @@ bool	return_error( char *err_mess );
 void get_local_ip( char *buffer, struct sockaddr_in *tmp_ip );
 char  *return_service_udp(int port);
 char *return_service_tcp(int port);
+int    ft_nblen(int nb);
+char		*ft_itoa(int num);
 
 #endif

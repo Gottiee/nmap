@@ -44,7 +44,6 @@ void	init_values_udp( struct iphdr *iph, struct udphdr *udph, char packet[4096],
 {
 	char	filter_str[1024] = {0};
 
-	srand(time(NULL));
 	init_ip_h(iph, th_info, IPPROTO_UDP);
 	iph->check = checksum((unsigned short *)packet, iph->tot_len);
 	uint16_t random_src_port = init_udp_h(udph, port->nb);

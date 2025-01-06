@@ -62,7 +62,7 @@ pcap_t *init_handler( void )
 		fprintf(stderr, "ft_nmap: pcap_immediate_mode: %s\n", error_buffer);
 		return (NULL);
     }
-    if (pcap_set_timeout(handle, 500) != 0)
+    if (pcap_set_timeout(handle, 300) != 0)
 	{
 		pcap_close(handle);
 		fprintf(stderr, "ft_nmap: pcap_timeout: %s", error_buffer);
@@ -84,12 +84,6 @@ pcap_t *init_handler( void )
 	{
 		pcap_close(handle);
 		fprintf(stderr, "Quitting!\n Unknown interface: %s\n", g_info->options.interface);
-		return (NULL);
-    }
-    if (pcap_datalink(handle) != DLT_LINUX_SLL)
-	{
-		pcap_close(handle);
-		fprintf(stderr, "ft_nmap: pcap_datalink: %s\n", error_buffer);
 		return (NULL);
     }
 	return handle;
@@ -217,7 +211,7 @@ bool send_recv_packet( t_scan_port *port, t_thread_arg *th_info, struct pollfd p
 		}
 
 	arm_poll:
-		ret_val = poll(&pollfd, 1, 400);
+		ret_val = poll(&pollfd, 1, 50);
 		if (ret_val == -1)
 		{
 			pthread_mutex_lock(&g_lock);
@@ -266,6 +260,7 @@ bool fill_sockaddr_in(char *target, struct sockaddr_in *ping_addr)
 	}
 	if (!dns_lookup(target, ping_addr))
 		return (0);
+
 	return (1);
 }
 
@@ -303,6 +298,10 @@ bool	scan_switch( t_scan_port *port, t_thread_arg *th_info)
 void	init_th_info( t_thread_arg *th_info, t_info *info )
 {
 	th_info->handle = init_handler();
+	if (th_info->handle == NULL)
+	{
+		fatal_perror("ft_nmap: pcap interface");
+	}
 	th_info->scan_type = info->scan_type[0];
 	th_info->ip_src = info->ip_src;
 	th_info->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
@@ -334,6 +333,8 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 	
 	for (; port < last_port; port++)
 	{
+		if (info->options.verbose == true)
+			printf("scanning host %s port %d\n", host->name, port);
 		for (uint8_t scan = 0; scan < NB_MAX_SCAN && info->scan_type[scan] != -1; scan++)
 		{
 			host->port_tab[port - info->first_port].nb = port;
@@ -344,4 +345,5 @@ void scan(struct sockaddr_in *ping_addr, t_info *info, t_host *host)
 	}
 	end_scan:
 		pcap_close(th_info.handle);
+		close(th_info.sockfd);
 }

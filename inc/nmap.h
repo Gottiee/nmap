@@ -51,10 +51,10 @@ extern pthread_mutex_t	g_lock;
 typedef struct	s_opt
 {
 	bool	ping;
-	bool	random;
 	char	*interface;
 	uint32_t	ttl;
 	int	nb_retries;
+	bool	verbose;
 }				t_opt;
 
 typedef struct	s_info
@@ -64,7 +64,9 @@ typedef struct	s_info
 	uint16_t	first_port;
 	uint16_t	port_range;
 	int nb_thread;
+	int real_threads;
 	int scan_type[NB_MAX_SCAN];
+	uint	nb_scan_type;
 	int	nb_host_ping;
 	int	nb_host_ping_success;
 	t_host *start_host;
@@ -76,7 +78,7 @@ typedef struct	s_info
 } t_info;
 
 //	PRINT.C
-void	super_print( t_host *host, t_info *info );
+void	super_print( t_host *host, t_info *info, double second );
 void	print_usage( void );
 
 #endif
