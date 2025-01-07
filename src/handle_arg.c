@@ -400,7 +400,7 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 			case 0:
 				print_usage();
 				(void)error_handling(&hostnames);
-				return (NULL) ;
+				exit (0);
 			case 1:
 				if (define_scan(argv, info) == 1)
 					return (error_handling(&hostnames));
@@ -470,6 +470,8 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 	{
 		for ( ; hostnames[t] != NULL; t++){}
 		info->nb_thread = info->port_range * info->nb_scan_type * t;
+		if (info->nb_thread > info->real_threads)
+			info->nb_thread = info->real_threads;
 	}
 	return (hostnames);
 }

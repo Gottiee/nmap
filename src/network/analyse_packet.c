@@ -34,9 +34,13 @@ void	recv_tcp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 		if (scan_type == SYN && r_tcp->syn && r_tcp->ack)
 		{
 			port->state[scan_type] = OPEN;
-			pthread_mutex_lock(&g_print_lock);
-			host->open ++;
-			pthread_mutex_unlock(&g_print_lock);
+			if (port->opened == false)
+			{
+				pthread_mutex_lock(&g_print_lock);
+				host->open ++;
+				pthread_mutex_unlock(&g_print_lock);
+				port->opened = true;
+			}
 		}
 		else if (r_tcp->rst)
 		{
@@ -73,9 +77,13 @@ void	recv_udp( const u_char *r_buf, t_scan_port *port, const uint8_t th_id, cons
 	else
 	{
 		port->state[scan_type] = OPEN;
-		pthread_mutex_lock(&g_print_lock);
-		host->open ++;
-		pthread_mutex_unlock(&g_print_lock);
+		if (port->opened == false)
+		{
+			pthread_mutex_lock(&g_print_lock);
+			host->open ++;
+			pthread_mutex_unlock(&g_print_lock);
+			port->opened = true;
+		}
 	}
 }
 

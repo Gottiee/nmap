@@ -78,6 +78,8 @@ int main( int argc, char **argv )
 {
     t_info info = {0};
 	g_info = &info;
+
+	printf("Starting ft_nmap ... \n\n");
 	
 	srand(time(NULL));
 

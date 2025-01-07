@@ -36,6 +36,7 @@ typedef struct s_scan_port
 {	
 	uint16_t nb;
 	int state[6];
+	bool	opened;
 } t_scan_port;
 
 typedef struct s_host
