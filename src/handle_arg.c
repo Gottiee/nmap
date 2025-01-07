@@ -261,7 +261,6 @@ bool	define_nb_retries( char ***argv, t_info *info )
 	errno = 0;
 	
 	++(*argv);
-	printf("arg define == %s\n", **argv);
 	if (**argv == NULL)
 		return (return_error("Format error: max-retries: no value"));
 	for (i = 0; (**argv)[i] != '\0'; i++)
@@ -334,26 +333,26 @@ char **define_random_target( char ***argv )
 	{
 		if (isdigit((**argv)[i]) == 0)
 		{
-			perror("ft_nmap: rand-target: must be a number");
+			fprintf(stderr, "ft_nmap: rand-target: must be a number");
 			return (NULL);
 		}
 	}
 	if (i == 0)
 	{
-		perror("ft_nmap: rand-target: no value");
+		fprintf(stderr, "ft_nmap: rand-target: no value");
 		return (NULL);
 	}
 
 	random = atoi(**argv);
 	if (random == 0)
 	{
-		perror("ft_nmap: rand-target: must be strictly positive");
+		fprintf(stderr, "ft_nmap: rand-target: must be strictly positive");
 		return (NULL);
 	}
 	hostnames = calloc(random + 1, sizeof(char *));
 	if (hostnames == NULL)
 	{
-		perror("ft_nmap: calloc hostnames");
+		fprintf(stderr, "ft_nmap: calloc hostnames");
 		return (NULL);
 	}
 	for (size_t i = 0; i < random; i++)
@@ -377,9 +376,6 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 	char	*opt_list[] = {"help", "scan", "speedup", "ip", "ports", "file", "max-retries", "ttl", "no-ping", "rand-target", "interface", "verbose", NULL};
 	uint8_t	i = 0;
 	unsigned short	port_range[2] = {0};
-
-	if (argc < 2)
-		fprintf(stderr, "Format error: Invalid number of arguments\n");
 
 	(*argv)++;
 	for (int nb_arg = 0; **argv != NULL && nb_arg < argc; nb_arg++)
@@ -427,8 +423,12 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 			case 5:
 				if (hostnames == NULL)
 					hostnames = init_hostnames(0, argv);
-				else
-					*argv += 1;
+				else if ( *((*argv) + 1) == NULL )
+				{
+					fprintf(stderr, "ft_nmap: file: no value\n");
+					return (error_handling(&hostnames));
+				}
+				*argv += 1;
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
 				break ;
@@ -444,15 +444,24 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 				info->options.ping = false;
 				break ;
 			case 9:
-				if (info->hostnames == NULL)
+				if (hostnames == NULL)
 					hostnames = define_random_target(argv);
-				else
-					*argv += 1;
+				else if ( *((*argv) + 1) == NULL )
+				{
+					fprintf(stderr, "ft_nmap: rand-target: no value\n");
+					return (error_handling(&hostnames));
+				}
+				*argv += 1;
 				if (hostnames == NULL)
 					return (error_handling(&hostnames));
 				break ;
 			case 10:
-				++(*argv);
+				if ( *((*argv) + 1) == NULL )
+				{
+					fprintf(stderr, "ft_nmap: interface: no value\n");
+					return (error_handling(&hostnames));
+				}
+				*argv += 1;
 				info->options.interface = **argv;
 				break ;
 			case 11:
@@ -463,7 +472,7 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 				return (error_handling(&hostnames));
 		}
 		if (*argv != NULL && i != 1)
-			++(*argv);
+			*argv += 1;
 	}
 	uint t = 0;
 	if (info->real_threads > 0)
@@ -473,5 +482,7 @@ char	**handle_arg( int argc, char ***argv, t_info *info )
 		if (info->nb_thread > info->real_threads)
 			info->nb_thread = info->real_threads;
 	}
+	if (hostnames == NULL)
+		fprintf(stderr, "ft_nmap: No host provided.\n");
 	return (hostnames);
 }

@@ -87,7 +87,7 @@ int main( int argc, char **argv )
 	info.hostnames = handle_arg(argc, &argv, &info);
 	if (info.hostnames == NULL || info.hostnames[0] == NULL)
 	{
-		printf("QUITTING !\nNo host provided.\n\n");
+		printf("QUITTING !\n\n");
 		print_usage();
 		exit (2);
 	}
